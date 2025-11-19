@@ -1,0 +1,44 @@
+syntax = "proto3";
+
+package sirius.v1;
+
+import "msgdef/general.proto";
+
+enum AuthMethod {
+  /// no authentication
+  AUTH_METHOD_NONE = 0;
+
+  /// username-password authentication
+  AUTH_METHOD_PASSWORD = 1;
+
+  /// password-only authentication
+  AUTH_METHOD_SIMPLE_PASSWORD = 2;
+
+  /// ssh key-based authentication
+  AUTH_METHOD_SSH_KEY = 3;
+}
+
+/// 서버가 클라이언트에게 인증 방식을 요청할 때 보내는 메시지
+message AuthChallenge {
+  /// 서버가 받아들일 수 있는 인증 방식 목록.
+  repeated AuthMethod acceptedMethods = 1;
+
+  /// base64로 인코드 된 서버의 퍼블릭 키.
+  /// Example: `ed25519:(publickey)`
+  bytes publicKey = 2;
+
+  /// 서버가 클라이언트에게 전달하는 추가 메시지
+  optional string message = 3;
+}
+
+message AuthRequest {
+  AuthMethod method = 1;
+  optional bytes payload = 2;
+}
+
+message AuthResponse {
+  bool success = 1;
+  UUID sessionId = 2;
+
+  optional string message = 4;
+}

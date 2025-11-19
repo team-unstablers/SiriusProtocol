@@ -1,0 +1,65 @@
+syntax = "proto3";
+
+package sirius.v1.channels.hidio;
+
+import "msgdef/general.proto";
+
+enum MouseMoveEventType {
+  MOUSE_MOVE_ABSOLUTE = 0;
+  MOUSE_MOVE_RELATIVE = 1;
+}
+
+enum MouseButtonEventType {
+  MOUSE_BUTTON_DOWN = 0;
+  MOUSE_BUTTON_UP = 1;
+}
+
+enum MouseWheelEventType {
+  MOUSE_WHEEL_UP = 0;
+  MOUSE_WHEEL_DOWN = 1;
+}
+
+message RawEvent {
+  fixed32 id = 1;
+  fixed32 type = 2;
+
+  fixed32 param1 = 3;
+  fixed32 param2 = 4;
+  fixed32 param3 = 5;
+  fixed32 param4 = 6;
+}
+
+message KeyboardEvent {
+  fixed32 eventType = 1;
+  fixed32 keyCode = 2;
+}
+
+message MouseMoveEvent {
+  MouseMoveEventType moveType = 1;
+
+  sfixed32 x = 2;
+  sfixed32 y = 3;
+}
+
+message MouseButtonEvent {
+  MouseButtonEventType eventType = 1;
+  fixed32 button = 2;
+}
+
+message MouseWheelEvent {
+  MouseWheelEventType eventType = 1;
+  fixed32 delta = 2;
+}
+
+message HIDIOMessage {
+  optional fixed64 sequenceNumber = 1;
+  optional fixed64 timestamp = 2;
+
+  oneof payload {
+    RawEvent rawEvent = 3;
+    KeyboardEvent keyboardEvent = 4;
+    MouseMoveEvent mouseMoveEvent = 5;
+    MouseButtonEvent mouseButtonEvent = 6;
+    MouseWheelEvent mouseWheelEvent = 7;
+  }
+}

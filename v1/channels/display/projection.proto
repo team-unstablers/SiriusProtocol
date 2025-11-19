@@ -1,0 +1,157 @@
+syntax = "proto3";
+
+package sirius.v1.channels.display;
+
+import "msgdef/general.proto";
+
+enum CodecFourCC {
+  DISPLAY_CODEC_NONE = 0;
+
+  /// 'AVC1' - H.264 / AVC
+  DISPLAY_CODEC_AVC1 = 0x31435641;
+
+  /// 'HVC1' - H.265 / HEVC
+  DISPLAY_CODEC_HVC1 = 0x31435648;
+
+  /// 'TURL' - RLE (team unstablers variant)
+  DISPLAY_CODEC_TURL = 0x0;
+}
+
+enum AutoQualityMode {
+  AUTO_QUALITY_MODE_BALANCED_PRIORITY = 0;
+
+  AUTO_QUALITY_MODE_QUALITY_PRIORITY = 1;
+  AUTO_QUALITY_MODE_PERFORMANCE_PRIORITY = 2;
+}
+
+message ConstantBitrateQuality {
+  sfixed32 bitrateKbps = 1;
+}
+
+message VariableBitrateQuality {
+  sfixed32 maxBitrateKbps = 1;
+  sfixed32 targetBitrateKbps = 2;
+}
+
+message FixedQuality {
+  sfixed32 quality = 1;
+}
+
+message LosslessQuality {
+
+}
+
+message AutoQuality {
+  AutoQualityMode mode = 1;
+}
+
+message Codec {
+  CodecFourCC fourCC = 1;
+
+  oneof quality {
+    ConstantBitrateQuality constantBitrate = 2;
+    VariableBitrateQuality variableBitrate = 3;
+    FixedQuality fixedQuality = 4;
+    LosslessQuality lossless = 5;
+    AutoQuality auto = 6;
+  }
+
+  optional float frameRate = 9;
+
+  optional fixed32 width = 10;
+  optional fixed32 height = 11;
+
+  /// "color-format: 'YUV444'; profile: 'high'; level: '4.2'" 등의 형식으로 코덱 옵션을 지정할 수 있습니다.
+  /// eg)
+  ///     color-format: 'YUV444'; hardware-acceleration: 'true'; profile: 'high'; level: '4.2';
+  optional string options = 15;
+}
+
+/// 전체 디스플레이를 프로젝션할 때 사용합니다.
+message EntireDisplayProjectionSource {
+  sfixed32 displayId = 1;
+}
+
+/// 수동으로 직접 프로젝션할 뷰포트를 지정합니다.
+message DisplayRegionProjectionSource {
+  /// 디스플레이 ID.
+  /// -1로 설정하는 경우 기본 디스플레이를 의미합니다.
+  /// -2로 설정하는 경우 전체 디스플레이 영역을 의미합니다.
+  sfixed32 displayId = 1;
+
+  /// 왼쪽 위 모서리의 X 좌표
+  fixed32 x = 2;
+  /// 왼쪽 위 모서리의 Y 좌표
+  fixed32 y = 3;
+  /// 너비
+  fixed32 width = 4;
+  /// 높이
+  fixed32 height = 5;
+}
+
+enum SingleWindowProjectionSourceFlags {
+  SINGLE_WINDOW_PROJECTION_FLAG_NONE = 0;
+  SINGLE_WINDOW_PROJECTION_FLAG_FOLLOW_SOURCE = 1;
+}
+
+/// 단일 창을 프로젝션할 때 사용합니다.
+message SingleWindowProjectionSource {
+  optional sfixed64 windowId = 1;
+  // TODO: Add more window identification methods (e.g., by process ID, by window title, etc.)
+
+  SingleWindowProjectionSourceFlags flags = 16;
+}
+
+enum ProjectionSourceFlags {
+  DISPLAY_VIEWPORT_FLAG_NONE = 0;
+}
+
+message ProjectionSource {
+  oneof value {
+    EntireDisplayProjectionSource entireDisplay = 1;
+    DisplayRegionProjectionSource region = 2;
+    SingleWindowProjectionSource singleWindow = 3;
+  }
+
+  ProjectionSourceFlags flags = 16;
+}
+
+message ProjectionRequest {
+  UUID identifier = 1;
+
+  ProjectionSource viewport = 2;
+  repeated Codec preferredCodecs = 3;
+}
+
+message StopProjectionRequest {
+  UUID identifier = 1;
+}
+
+message ProjectionSessionCreatedEvent {
+  UUID identifier = 1;
+
+  ProjectionSource source = 2;
+  Codec codec = 3;
+}
+
+message ProjectionSessionCreationFailedEvent {
+  UUID identifier = 1;
+  sfixed32 reason = 2;
+
+  optional string message = 3;
+}
+
+message ProjectionSessionChangedEvent {
+  UUID identifier = 1;
+  sfixed32 reason = 2;
+
+  ProjectionSource source = 3;
+  Codec codec = 4;
+}
+
+message ProjectionSessionEndedEvent {
+  UUID identifier = 1;
+  sfixed32 reason = 2;
+
+  optional string message = 3;
+}

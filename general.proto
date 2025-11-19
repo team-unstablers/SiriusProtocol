@@ -1,0 +1,40 @@
+syntax = "proto3";
+
+package sirius;
+
+message UUID {
+  /// 16 bytes UUID value
+  bytes value = 1;
+}
+
+enum NoticeSeverity {
+  INFO = 0;
+  WARNING = 1;
+  ERROR = 2;
+}
+
+message ServerNotice {
+  NoticeSeverity severity = 1;
+  string message = 2;
+  fixed64 timestamp = 3;
+}
+
+/// 클라이언트가 서버에 접속할 때 보내는 초기 핸드쉐이크 메시지
+message ClientHello {
+  fixed32 protocolVersion = 1;
+
+  string agentName = 2;
+}
+
+/// 서버가 클라이언트의 접속 요청에 응답할 때 보내는 메시지
+message ServerHello {
+  fixed32 protocolVersion = 1;
+
+  /// 지원하는 기능 목록
+  repeated UUID supportedFeatures = 2;
+
+  /// 서버 정책에 따라 생략될 수 있음
+  optional string serverName = 3;
+  /// 서버 정책에 따라 생략될 수 있음
+  optional string motd = 4;
+}

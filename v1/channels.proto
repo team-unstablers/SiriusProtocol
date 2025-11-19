@@ -1,0 +1,26 @@
+syntax = "proto3";
+
+package sirius.v1;
+
+import "msgdef/general.proto";
+
+message ChannelOpenRequest {
+  sirius.UUID featureId = 1;
+}
+
+message ChannelOpenResponse {
+  bool success = 1;
+
+  sirius.UUID featureId = 2;
+  fixed32 channelId = 3;
+}
+
+message ChannelCloseRequest {
+  fixed32 channelId = 1;
+}
+
+message ChannelCloseResponse {
+  bool success = 1;
+
+  fixed32 channelId = 2;
+}

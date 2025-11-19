@@ -1,0 +1,49 @@
+syntax = "proto3";
+
+package sirius.v1.channels.display;
+
+import "msgdef/general.proto";
+
+message WindowListRequest {
+  // TODO: filters
+}
+
+message WindowInfo {
+  fixed64 windowId = 1;
+  string title = 2;
+  fixed32 x = 3;
+  fixed32 y = 4;
+  fixed32 width = 5;
+  fixed32 height = 6;
+  bool isVisible = 7;
+}
+
+message WindowListResponse {
+  repeated WindowInfo windows = 1;
+}
+
+message WindowFocusRequest {
+  fixed64 windowId = 1;
+}
+
+message WindowFocusChangedEvent {
+  /// FIXME
+  fixed64 windowId = 1;
+  optional WindowInfo info = 2;
+}
+
+message WindowMovedEvent {
+  fixed64 windowId = 1;
+  fixed32 x = 2;
+  fixed32 y = 3;
+}
+
+message WindowResizedEvent {
+  fixed64 windowId = 1;
+  fixed32 width = 2;
+  fixed32 height = 3;
+}
+
+message WindowClosedEvent {
+  fixed64 windowId = 1;
+}
