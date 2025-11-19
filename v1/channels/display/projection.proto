@@ -14,7 +14,7 @@ enum CodecFourCC {
   DISPLAY_CODEC_HVC1 = 0x31435648;
 
   /// 'TURL' - RLE (team unstablers variant)
-  DISPLAY_CODEC_TURL = 0x0;
+  // DISPLAY_CODEC_TURL = 0x0;
 }
 
 enum AutoQualityMode {
@@ -117,32 +117,32 @@ message ProjectionSource {
 }
 
 message ProjectionRequest {
-  UUID identifier = 1;
+  sirius.UUID identifier = 1;
 
   ProjectionSource viewport = 2;
   repeated Codec preferredCodecs = 3;
 }
 
 message StopProjectionRequest {
-  UUID identifier = 1;
+  sirius.UUID identifier = 1;
 }
 
 message ProjectionSessionCreatedEvent {
-  UUID identifier = 1;
+  sirius.UUID identifier = 1;
 
   ProjectionSource source = 2;
   Codec codec = 3;
 }
 
 message ProjectionSessionCreationFailedEvent {
-  UUID identifier = 1;
+  sirius.UUID identifier = 1;
   sfixed32 reason = 2;
 
   optional string message = 3;
 }
 
 message ProjectionSessionChangedEvent {
-  UUID identifier = 1;
+  sirius.UUID identifier = 1;
   sfixed32 reason = 2;
 
   ProjectionSource source = 3;
@@ -150,7 +150,7 @@ message ProjectionSessionChangedEvent {
 }
 
 message ProjectionSessionEndedEvent {
-  UUID identifier = 1;
+  sirius.UUID identifier = 1;
   sfixed32 reason = 2;
 
   optional string message = 3;
