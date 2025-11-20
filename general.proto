@@ -1,6 +1,6 @@
 syntax = "proto3";
 
-package sirius;
+package sirius.msgdef;
 
 message UUID {
   /// 16 bytes UUID value
@@ -37,4 +37,12 @@ message ServerHello {
   optional string serverName = 3;
   /// 서버 정책에 따라 생략될 수 있음
   optional string motd = 4;
+}
+
+message GeneralMessage {
+  oneof payload {
+    ServerNotice serverNotice = 1;
+    ClientHello clientHello = 2;
+    ServerHello serverHello = 3;
+  }
 }

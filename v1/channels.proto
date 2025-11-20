@@ -1,17 +1,17 @@
 syntax = "proto3";
 
-package sirius.v1;
+package sirius.msgdef.v1;
 
 import "msgdef/general.proto";
 
 message ChannelOpenRequest {
-  sirius.UUID featureId = 1;
+  sirius.msgdef.UUID featureId = 1;
 }
 
 message ChannelOpenResponse {
   bool success = 1;
 
-  sirius.UUID featureId = 2;
+  sirius.msgdef.UUID featureId = 2;
   fixed32 channelId = 3;
 }
 
@@ -23,4 +23,13 @@ message ChannelCloseResponse {
   bool success = 1;
 
   fixed32 channelId = 2;
+}
+
+message ChannelControlMessage {
+  oneof payload {
+    ChannelOpenRequest channelOpenRequest = 1;
+    ChannelOpenResponse channelOpenResponse = 2;
+    ChannelCloseRequest channelCloseRequest = 3;
+    ChannelCloseResponse channelCloseResponse = 4;
+  }
 }
