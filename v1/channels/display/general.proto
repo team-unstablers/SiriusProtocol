@@ -1,4 +1,4 @@
 syntax = "proto3";
 
-package sirius.v1.channels.display;
+package sirius.msgdef.v1.channels.display;
 

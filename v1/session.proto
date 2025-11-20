@@ -1,6 +1,6 @@
 syntax = "proto3";
 
-package sirius.v1;
+package sirius.msgdef.v1;
 
 import "msgdef/general.proto";
 
@@ -41,4 +41,12 @@ message AuthResponse {
   UUID sessionId = 2;
 
   optional string message = 4;
+}
+
+message SessionAuthMessage {
+  oneof payload {
+    AuthChallenge authChallenge = 1;
+    AuthRequest authRequest = 2;
+    AuthResponse authResponse = 3;
+  }
 }
