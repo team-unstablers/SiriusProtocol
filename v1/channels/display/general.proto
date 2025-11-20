@@ -1,4 +1,0 @@
-syntax = "proto3";
-
-package sirius.msgdef.v1.channels.display;
-
