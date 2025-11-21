@@ -126,13 +126,23 @@ Sirius 프로토콜은 서버-클라이언트 모델을 기반으로 합니다.
 - opcode는 2바이트 고정 길이 필드로, 각 메시지의 시작 부분에 위치합니다.
 - opcode는 Big-Endian 형식으로 인코딩됩니다.
 
+### 'GLOBAL' OPCODES VS 'FEATURE CHANNEL' OPCODES
+
+- `0x0000` ~ `0x7FFF` 범위의 opcode는 'GLOBAL' opcode로 예약되어 있습니다.
+  - 이러한 opcode는 메인 채널 및 모든 채널에서 공통적으로 사용됩니다.
+  - 예: 핸드셰이크 메시지, 인증 메시지, 채널 시작 메시지 등
+- `0x8000` ~ `0xFFFF` 범위의 opcode는 채널별로 정의된 opcode로 사용됩니다.
+  - 예를 들어, A 채널의 opcode `0x8001`은 B 채널에서 다른 메시지를 나타낼 수 있습니다.
+  - 각 기능(feature)은 자체적으로 opcode 범위를 관리해야 합니다.
+    - 예: HIDIO 채널, Projection 채널 등
+
 ## FRAME STRUCTURE
 - 모든 Sirius 프로토콜 메시지는 다음과 같은 프레임 구조를 가집니다.
 
 ```
 +----------------+----------------+----------------+
 |    Opcode      |  Payload Len   |    Payload     |
-|   (2 bytes)    |   (2 bytes)    |  (variable)    |
+|   (2 bytes)    |   (4 bytes)    |  (variable)    |
 +----------------+----------------+----------------+
 ```
 
