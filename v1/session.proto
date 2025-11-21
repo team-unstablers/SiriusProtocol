@@ -40,8 +40,5 @@ message AuthRequest {
 
 /// opcode = 0x0013
 message AuthResponse {
-  bool success = 1;
-  UUID sessionId = 2;
-
-  optional string message = 4;
+  UUID sessionId = 1;
 }

@@ -35,13 +35,15 @@ enum NoticeSeverity {
   INFO = 0;
   WARNING = 1;
   ERROR = 2;
+  FATAL = 3;
 }
 
 /// opcode = 0x0001
 message ServerNotice {
   NoticeSeverity severity = 1;
-  string message = 2;
-  fixed64 timestamp = 3;
+  fixed32 code = 2;
+  string message = 3;
+  fixed64 timestamp = 4;
 }
 
 /// 클라이언트가 서버에 접속할 때 보내는 초기 핸드쉐이크 메시지
