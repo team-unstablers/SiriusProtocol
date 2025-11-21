@@ -147,6 +147,12 @@ Sirius 프로토콜의 기본 플로우는 다음과 같습니다.
 ## 1. 커넥션 수립
 
 - 서버와 클라이언트 간에 트랜스포트 레이어(예: QUIC)를 통해 커넥션이 수립됩니다.
+- 서버의 인증서 지문이 신뢰할 수 있는지 검증합니다.
+  - 만약 트러스트 리스트에 존재하지 경우, 사용자에게 경고 메시지를 표시하고 계속 진행할지 여부를 묻습니다.
+    - 시스템의 트러스트 스토어를 사용하는 것 보다는, 내부적으로 직접 트러스트 리스트를 관리하는 방식을 권장합니다.
+    - 왜냐하면, RDP 역시 그렇듯이 대부분의 Sirius 호스트는 자가 서명된 인증서를 사용할 것이기 때문입니다.
+  - 만약 트러스트 리스트에 호스트가 있지만 지문이 다른 경우, '서버가 위장된 것일 수 있습니다' 같은 내용의 경고 메시지를 표시하고 계속 진행할지 여부를 묻습니다.
+  - 만약 사용자가 계속 진행하지 않기로 한 경우, 커넥션을 종료합니다.
 
 ## 2. 메인 채널 생성 
 
@@ -225,20 +231,13 @@ transport.close()
 ```swift
 mainChannel.send(AuthChallenge(
     acceptedMethods: [.password, .sshKey],
-    publicKey: 'ed25519:...',
     message: '이 컴퓨터는 Acme Corp. 소유입니다. 허가 받지 않은 접근을 금지합니다.'
 ))
 ```
 
 - **클라이언트**는 서버의 인증 요청을 수신한 후, 아래 시퀀스의 동작을 취합니다.
-  - 서버의 `publicKey`가 신뢰할 수 있는 키인지 검증합니다.
-    - 만약 트러스트 리스트에 없는 키인 경우, 사용자에게 경고 메시지를 표시하고 계속 진행할지 여부를 묻습니다.
-    - 만약 트러스트 리스트에 호스트가 있지만 키가 다른 경우, '서버가 위장된 것일 수 있습니다' 같은 내용의 경고 메시지를 표시하고 계속 진행할지 여부를 묻습니다.
-    - 만약 사용자가 계속 진행하지 않기로 한 경우, 커넥션을 종료합니다.
   - acceptedMethods 중에서 사용할 인증 방식을 선택합니다.
     - 만약 사용할 수 있는 인증 방식이 없는 경우, 커넥션을 종료합니다.
-- 적절한 인증 요청 메시지 (`AuthRequest`)를 전송합니다.
-  - payload는 서버의 ed25519 공개키로 암호화 되어야 합니다.
 
 ```swift
 mainChannel.send(AuthRequest(
@@ -253,12 +252,12 @@ mainChannel.send(AuthRequest(
 
 ```swift
 let authRequest: AuthRequest
-let payload = decryptPayload(authRequest.payload, with: serverPrivateKey)
+assert(authRequest.method == .password)
+let payload = JSON.parse(authRequest.payload) as AuthPasswordPayload
 
 guard pam.authenticate(payload.username, payload.password) else {
     mainChannel.send(AuthChallenge(
         acceptedMethods: [.password, .sshKey],
-        publicKey: 'ed25519:...',
         message: '인증에 실패했습니다. 다시 시도해 주세요.'
     ))
     
@@ -425,5 +424,4 @@ projectionChannel.requestProjection(
 projectionDataChannel.onVideoFrameReceived { frame in
     renderVideoFrame(frame)
 }
-
 ```

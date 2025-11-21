@@ -24,10 +24,6 @@ message AuthChallenge {
   /// 서버가 받아들일 수 있는 인증 방식 목록.
   repeated AuthMethod acceptedMethods = 1;
 
-  /// base64로 인코드 된 서버의 퍼블릭 키.
-  /// Example: `ed25519:(publickey)`
-  bytes publicKey = 2;
-
   /// 서버가 클라이언트에게 전달하는 추가 메시지
   optional string message = 3;
 }
