@@ -4,6 +4,7 @@ package sirius.msgdef.v1.channels.display;
 
 import "msgdef/general.proto";
 
+/*
 enum CodecFourCC {
   DISPLAY_CODEC_NONE = 0;
 
@@ -16,6 +17,7 @@ enum CodecFourCC {
   /// 'TURL' - RLE (team unstablers variant)
   // DISPLAY_CODEC_TURL = 0x0;
 }
+ */
 
 enum AutoQualityMode {
   AUTO_QUALITY_MODE_BALANCED_PRIORITY = 0;
@@ -46,7 +48,7 @@ message AutoQuality {
 }
 
 message Codec {
-  CodecFourCC fourCC = 1;
+  fixed32 fourCC = 1;
 
   oneof quality {
     ConstantBitrateQuality constantBitrate = 2;

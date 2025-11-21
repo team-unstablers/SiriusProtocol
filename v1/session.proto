@@ -19,6 +19,7 @@ enum AuthMethod {
 }
 
 /// 서버가 클라이언트에게 인증 방식을 요청할 때 보내는 메시지
+/// opcode = 0x0011
 message AuthChallenge {
   /// 서버가 받아들일 수 있는 인증 방식 목록.
   repeated AuthMethod acceptedMethods = 1;
@@ -31,22 +32,16 @@ message AuthChallenge {
   optional string message = 3;
 }
 
+// opcode = 0x0012
 message AuthRequest {
   AuthMethod method = 1;
   optional bytes payload = 2;
 }
 
+/// opcode = 0x0013
 message AuthResponse {
   bool success = 1;
   UUID sessionId = 2;
 
   optional string message = 4;
-}
-
-message SessionAuthMessage {
-  oneof payload {
-    AuthChallenge authChallenge = 1;
-    AuthRequest authRequest = 2;
-    AuthResponse authResponse = 3;
-  }
 }

@@ -4,6 +4,12 @@ package sirius.msgdef.v1.channels.hidio;
 
 import "msgdef/general.proto";
 
+/*
+# HIDIO CHANNEL
+- HIDIO 채널은 HID (Human Interface Device) 입력 이벤트를 전송하는 데 사용됩니다.
+- 이 채널은 키보드, 마우스 등의 입력 장치에서 발생하는 이벤트를 캡처하고, 이를 원격 시스템으로 전송하는 기능을 제공합니다.
+ */
+
 enum MouseMoveEventType {
   MOUSE_MOVE_ABSOLUTE = 0;
   MOUSE_MOVE_RELATIVE = 1;
@@ -19,6 +25,11 @@ enum MouseWheelEventType {
   MOUSE_WHEEL_DOWN = 1;
 }
 
+/*
+## RAW EVENT FORMAT
+- RawEvent 메시지는 HID 이벤트의 원시 형식을 나타냅니다.
+- 추후 펜 태블릿, 조이스틱 등 다양한 입력 장치의 이벤트를 지원하기 위해 확장될 수 있습니다.
+ */
 message RawEvent {
   fixed32 id = 1;
   fixed32 type = 2;
@@ -29,10 +40,26 @@ message RawEvent {
   fixed32 param4 = 6;
 }
 
+/*
+## KEYBOARD EVENT FORMAT
+- KeyboardEvent 메시지는 키보드 입력 이벤트를 나타냅니다.
+- eventType 필드는 키 다운, 키 업 등의 이벤트 유형을 나타냅니다.
+ */
 message KeyboardEvent {
   fixed32 eventType = 1;
   fixed32 keyCode = 2;
+  fixed32 flags = 3;
 }
+
+/*
+TODO: Extended keyboard event (UCS4, Keyboard layout ...)
+ */
+
+/*
+## MOUSE MOVE EVENT
+- MouseMoveEvent 메시지는 마우스 이동 이벤트를 나타냅니다.
+- moveType 필드는 절대 좌표 이동과 상대 좌표 이동을 구분합니다.
+ */
 
 message MouseMoveEvent {
   MouseMoveEventType moveType = 1;
@@ -52,8 +79,8 @@ message MouseWheelEvent {
 }
 
 message HIDIOMessage {
-  optional fixed64 sequenceNumber = 1;
-  optional fixed64 timestamp = 2;
+  fixed64 sequenceNumber = 1;
+  fixed64 timestamp = 2;
 
   oneof payload {
     RawEvent rawEvent = 3;
