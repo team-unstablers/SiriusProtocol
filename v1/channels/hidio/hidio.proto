@@ -21,7 +21,7 @@ import "msgdef/v1/channels/hidio/hid_raw.proto";
 - sequenceNumber 필드는 메시지의 순서를 나타내며, timestamp 필드는 이벤트가 발생한 시간을 나타냅니다.
  */
 
-// opcode = 0x8010
+// opcode = 0x8001
 message HIDIOPacket {
   fixed64 sequenceNumber = 1;
   fixed64 timestamp = 2;

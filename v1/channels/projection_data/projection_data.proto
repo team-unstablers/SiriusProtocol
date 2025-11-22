@@ -1,0 +1,20 @@
+syntax = "proto3";
+
+package sirius.msgdef.v1.channels.projection;
+
+import "msgdef/general.proto";
+
+// opcode = 0x8001
+message FrameDataHeader {
+  fixed64 frameId = 1;
+  // frameLength는 Protobuf 패킷 길이나 bytes 필드 길이로 대체되므로 제외 가능
+  // 하지만 스트림 파싱 용도로 남겨둔다면 유지.
+  fixed32 frameLength = 2;
+
+  // PTS (Presentation Timestamp) - 마이크로초 단위 권장
+  uint64 presentationTimestamp = 3;
+
+  // 키프레임 여부 (드랍 로직에서 중요: 키프레임은 웬만하면 드랍 안 하는 게 좋음)
+  bool isKeyFrame = 4;
+}
+
