@@ -62,6 +62,5 @@ message ChannelCloseRequest {
   예를 들어, 서버가 과부하 상태이거나, 클라이언트가 권한이 없는 기능에 접근하려고 할 때 등입니다.
 
 - feature에 따라 채널 오픈 이후에는 Sirius가 아닌 전혀 다른 프로토콜로 Upgrade 될 수도 있습니다.
-  - 예: 화면 / 개별 윈도우 프로젝션을 위해 ProjectionData 채널이 열리면, RTP / RTCP로 Upgrade되는 것이 가능합니다.
   - 이 경우, Sirius는 채널 오픈 이후 데이터 전송에 관여하지 않습니다.
  */
