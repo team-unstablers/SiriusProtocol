@@ -1,0 +1,76 @@
+syntax = "proto3";
+
+package sirius.msgdef.v1.channels.hidio;
+
+import "msgdef/general.proto";
+
+enum MouseMoveEventType {
+  MOUSE_MOVE_ABSOLUTE = 0;
+  MOUSE_MOVE_RELATIVE = 1;
+}
+
+enum MouseButtonEventType {
+  MOUSE_BUTTON_DOWN = 0;
+  MOUSE_BUTTON_UP = 1;
+}
+
+enum MouseButtonType {
+  MOUSE_BUTTON_LEFT = 0;
+  MOUSE_BUTTON_RIGHT = 1;
+  MOUSE_BUTTON_MIDDLE = 2;
+  MOUSE_BUTTON_BACK = 3;
+  MOUSE_BUTTON_FORWARD = 4;
+}
+
+
+message CursorPositionPixel {
+  // 왼쪽 위 모서리를 기준으로 한 픽셀 좌표
+  sfixed32 x = 1;
+  // 왼쪽 위 모서리를 기준으로 한 픽셀 좌표
+  sfixed32 y = 2;
+}
+
+message CursorPositionPercent {
+  // 0.0 ~ 1.0 범위의 값; 왼쪽 위 모서리를 기준으로 함
+  float x = 1;
+  // 0.0 ~ 1.0 범위의 값; 왼쪽 위 모서리를 기준으로 함
+  float y = 2;
+}
+
+message CursorPositionScope {
+  oneof scope {
+    // 한 디스플레이의 전체 영역을 기준으로 합니다.
+    // - 만약 이 필드의 값을 -1로 설정하는 경우 기본 디스플레이를 의미합니다.
+    // - 만약 이 필드의 값을 -2로 설정하는 경우 전체 화면 영역 (멀티 디스플레이 환경에서 모든 디스플레이를 포함한 영역)를 의미합니다.
+    sfixed32 displayId = 1;
+
+    // 특정 윈도우 ID(핸들)을 기준으로 합니다.
+    sfixed64 windowId = 2;
+  }
+}
+
+/*
+## MOUSE MOVE EVENT
+- MouseMoveEvent 메시지는 마우스 이동 이벤트를 나타냅니다.
+- moveType 필드는 절대 좌표 이동과 상대 좌표 이동을 구분합니다.
+</code>
+ */
+message MouseMoveEvent {
+  MouseMoveEventType moveType = 1;
+  CursorPositionScope scope = 2;
+
+  oneof position {
+    CursorPositionPixel pixel = 3;
+    CursorPositionPercent percent = 4;
+  }
+}
+
+message MouseButtonEvent {
+  MouseButtonEventType eventType = 1;
+  MouseButtonType button = 2;
+}
+
+message MouseWheelEvent {
+  float deltaX = 1;
+  float deltaY = 2;
+}
