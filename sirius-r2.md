@@ -175,7 +175,7 @@ Sirius 프로토콜에서 사용되는 모든 메시지는 **Protocol Buffers v3
 
 ### GLOBAL OPCODES vs FEATURE CHANNEL OPCODES
 
-opcode 공간은 두 가지 용도로 나누어 사용합니다.
+opcode 공간은 세가지 용도로 나누어 사용합니다.
 
 - `0x0000` ~ `0x7FFF`: **Global opcode**
   - 메인 채널을 포함한 **모든 채널에서 공통으로 사용되는 메시지**에 할당됩니다.
@@ -183,12 +183,15 @@ opcode 공간은 두 가지 용도로 나누어 사용합니다.
     - 핸드셰이크 메시지 (`ClientHello`, `ServerHello`)
     - 인증 메시지 (`AuthChallenge`, `AuthRequest`, `AuthResponse`)
     - 채널 관리 메시지 (`ChannelStartRequest`, `ChannelStartResponse`, `ChannelCloseRequest`)
-- `0x8000` ~ `0xFFFF`: **Feature channel opcode**
+- `0x8000` ~ `0xFF00`: **Feature channel opcode**
   - 각 기능(feature)에서 **채널별로 정의하는 메시지**에 사용됩니다.
   - 예:
     - HIDIO 채널의 입력 이벤트 메시지
     - Projection 채널의 프로젝션 요청/이벤트 메시지
   - 동일한 숫자 값의 opcode라도, 채널/기능에 따라 다른 메시지를 의미할 수 있습니다.
+
+- `0xFF01` ~ `0xFFFF`: **Special Use**
+  - `0xFFFE`: encapsulated message (see 'PROTOCOL UPGRADE' section)
 
 각 기능은 자신이 사용하는 feature channel opcode의 범위를 책임지고 관리해야 합니다.
 
@@ -212,6 +215,12 @@ opcode 공간은 두 가지 용도로 나누어 사용합니다.
 
 - **Payload (variable)**  
   Protobuf v3로 직렬화된 실제 메시지 데이터를 포함하는 가변 길이 필드입니다.
+
+## PROTOCOL UPGRADE
+
+- 각 기능(feature) / 채널은 필요에 따라 스트림 자체를 다른 프로토콜로 업그레이드할 수 있습니다.
+  - 예: WebSocket-over-Sirius, SSH-over-Sirius, TCP-over-Sirius 등
+- 업그레이드 된 프로토콜의 메시지는 `0xFFFE` opcode를 사용하여 캡슐화(encapsulate) 되어야 합니다.
 
 # PROTOCOL FLOW
 
