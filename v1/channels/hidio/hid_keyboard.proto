@@ -5,13 +5,13 @@ package sirius.msgdef.v1.channels.hidio;
 import "msgdef/general.proto";
 
 enum KeyboardLayoutId {
-  KEYBOARD_LAYOUT_ID_ANSI = 0;
-  KEYBOARD_LAYOUT_ID_ISO = 1;
-  KEYBOARD_LAYOUT_ID_JIS = 2;
-  KEYBOARD_LAYOUT_ID_KS = 3;
+  KEYBOARD_LAYOUT_ANSI = 0;
+  KEYBOARD_LAYOUT_ISO = 1;
+  KEYBOARD_LAYOUT_JIS = 2;
+  KEYBOARD_LAYOUT_KS = 3;
 
   // 이 값은 가상 키보드 (iOS, iPhone 등의 태블릿 / 휴대폰의 소프트웨어 키보드)를 통해 키보드 이벤트를 보낼 것임을 나타내는 힌트 값입니다
-  KEYBOARD_LAYOUT_ID_VIRTUAL = 15;
+  KEYBOARD_LAYOUT_VIRTUAL = 15;
 }
 
 /// Keyboard Layout 정의
@@ -77,20 +77,20 @@ enum KeyboardModifier {
   KEYBOARD_MODIFIER_RMETA  = 0x0080;
 }
 
+enum KeyboardEventType {
+  KEYBOARD_EVENT_TYPE_UNKNOWN = 0;
+  KEYBOARD_EVENT_TYPE_KEY_DOWN = 1;  // 키 다운 이벤트
+  KEYBOARD_EVENT_TYPE_KEY_UP = 2;    // 키 업 이벤트
+  KEYBOARD_EVENT_TYPE_UCS4 = 3;      // UCS4 문자 입력 이벤트 - keyCode 필드에 UCS4 문자가 포함됩니다.
+}
+
 /*
 ## KEYBOARD EVENT FORMAT
 - KeyboardEvent 메시지는 키보드 입력 이벤트를 나타냅니다.
 - eventType 필드는 키 다운, 키 업 등의 이벤트 유형을 나타냅니다.
  */
 message KeyboardEvent {
-  enum EventType {
-    KEY_EVENT_TYPE_UNKNOWN = 0;
-    KEY_EVENT_TYPE_KEY_DOWN = 1;  // 키 다운 이벤트
-    KEY_EVENT_TYPE_KEY_UP = 2;    // 키 업 이벤트
-    KEY_EVENT_TYPE_UCS4 = 3;      // UCS4 문자 입력 이벤트 - keyCode 필드에 UCS4 문자가 포함됩니다.
-  }
-
-  EventType eventType = 1;
+  KeyboardEventType eventType = 1;
 
   fixed32 scanCode = 2;
   fixed32 keyCode = 3;
