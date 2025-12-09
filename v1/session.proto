@@ -4,25 +4,11 @@ package sirius.msgdef.v1;
 
 import "msgdef/general.proto";
 
-enum AuthMethod {
-  /// no authentication
-  AUTH_METHOD_NONE = 0;
-
-  /// username-password authentication
-  AUTH_METHOD_PASSWORD = 1;
-
-  /// password-only authentication
-  AUTH_METHOD_SIMPLE_PASSWORD = 2;
-
-  /// ssh key-based authentication
-  AUTH_METHOD_SSH_KEY = 3;
-}
-
 /// 서버가 클라이언트에게 인증 방식을 요청할 때 보내는 메시지
 /// opcode = 0x0011
 message AuthChallenge {
   /// 서버가 받아들일 수 있는 인증 방식 목록.
-  repeated AuthMethod acceptedMethods = 1;
+  repeated string acceptedMethods = 1;
 
   /// 서버가 클라이언트에게 전달하는 추가 메시지
   optional string message = 3;
@@ -30,7 +16,7 @@ message AuthChallenge {
 
 // opcode = 0x0012
 message AuthRequest {
-  AuthMethod method = 1;
+  string method = 1;
   optional bytes payload = 2;
 }
 
