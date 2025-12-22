@@ -14,7 +14,30 @@ message FrameDataHeader {
   // PTS (Presentation Timestamp) - 마이크로초 단위 권장
   uint64 presentationTimestamp = 3;
 
-  // 키프레임 여부 (드랍 로직에서 중요: 키프레임은 웬만하면 드랍 안 하는 게 좋음)
-  bool isKeyFrame = 4;
+  fixed32 flags = 4;
+  // static const uint32_t FLAG_IS_KEYFRAME         = 0b00000001;
+  // static const uint32_t FLAG_H264_HEVC_IS_ANNEXB = 0b;
 }
 
+message CodecParameterSet {
+  // see CodecParameterSetType.hpp
+  fixed64 type = 1;
+  bytes data = 2;
+  fixed32 flags = 3;
+  // static const uint32_t FLAG_H264_HEVC_IS_ANNEXB = 0x00000001;
+}
+
+/*
+# CODEC PARAMETER SET
+- 일부 코덱은 디코더를 셋업할 때 파라미터를 필요로 합니다.
+  - H.264 (AVC) / H.265 (HEVC) 의 경우 SPS / PPS가 이에 해당합니다.
+- 이 메시지는 해당 코덱 파라미터를 전달하는 용도로 사용됩니다.
+
+## NOTE
+- **FrameDataHeader** (0x8001)을 보내기 전에 이 메시지를 먼저 보내지 않으면,
+  클라이언트 측에서 비디오 디코딩을 시도할 때 실패할 수 있습니다.
+ */
+// opcode = 0x8002
+message CodecParameterSetMessage {
+  repeated CodecParameterSet parameterSets = 1;
+}

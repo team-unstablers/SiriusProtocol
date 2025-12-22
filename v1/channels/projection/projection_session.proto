@@ -20,17 +20,29 @@ message StopProjectionRequest {
   sirius.msgdef.UUID identifier = 1;
 }
 
+/*
+## 프로젝션 성능 보고서
+- 프로젝션 세션이 진행되는 동안, 클라이언트는 주기적으로 서버에게 성능 보고서를 전송할 수 있습니다.
+- 이 보고서를 통해 서버는 클라이언트의 디코딩 성능과 네트워크 상태를 파악하여, 필요 시 비디오 품질을 조정할 수 있습니다.
+
+### ABOUT 'FRAME COUNT'
+- 모든 프레임 카운트 필드는 마지막 보고서 이후로 수신된 프레임 수를 나타냅니다.
+
+ */
 // opcode = 0x8013
 message ProjectionPerformanceReport {
-  fixed32 receivedFrameCount = 1;
-  fixed32 decodedFrameCount = 2;
-  fixed32 droppedFrameCount = 3;
+  /// 프로젝션 세션 식별자
+  sirius.msgdef.UUID identifier = 1;
 
-  // 평균 디코딩 시간 (ms)
-  fixed32 averageDecodeTimeMs = 4;
+  /// 인터벌동안 수신된 프레임 수
+  fixed32 receivedFrameCount = 2;
+  /// 인터벌동안 디코드에 성공한 프레임 수
+  fixed32 decodedFrameCount = 3;
+  /// 인터벌동안 드롭된 프레임 수
+  fixed32 droppedFrameCount = 4;
 
-  // 추가 제안: 지터 버퍼가 얼마나 차있는지?
-  fixed32 currentQueueSize = 5;
+  // 인터벌 동안의 평균 디코딩 시간 (밀리초 단위)
+  fixed32 averageDecodeTimeMs = 5;
 }
 
 // opcode = 0x8021

@@ -26,6 +26,7 @@ namespace CodecFourCC {
 }
  */
 
+
 /*
 ## 자동 품질 모드에 대한 프리셋
 - 자동 품질 모드는 서버 / 코덱이 클라이언트의 성능과 네트워크 상태를 고려하여 최적의 품질 설정을 자동으로 선택하도록 합니다.
@@ -118,6 +119,8 @@ message Codec {
   /// - 바이트 오더는 반드시 빅 엔디안이어야 합니다.
   fixed32 fourCC = 1;
 
+  /// 코덱 품질 설정
+  /// -
   oneof quality {
     ConstantBitrateQuality constantBitrate = 2;
     VariableBitrateQuality variableBitrate = 3;
@@ -135,5 +138,13 @@ message Codec {
   /// "color-format: 'YUV444'; profile: 'high'; level: '4.2'" 등의 형식으로 코덱 옵션을 지정할 수 있습니다.
   /// eg)
   ///     color-format: 'YUV444'; hardware-acceleration: 'true'; profile: 'high'; level: '4.2';
+
   optional string options = 15;
 }
+
+/*
+# IMPLEMENTATION NOTES
+- fourCC 필드는 반드시 빅 엔디안 바이트 오더로 인코딩되어야 합니다.
+- ConstantBitrateQuality, VariableBitrateQuality를 제외한 나머지는 optional한 구현 사항입니다.
+  (서버 / 클라이언트 구현체가 해당 품질 설정을 지원하지 않을 수 있습니다.)
+ */

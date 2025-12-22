@@ -6,6 +6,9 @@ import "msgdef/general.proto";
 
 /// 전체 디스플레이를 프로젝션할 때 사용합니다.
 message EntireDisplayProjectionSource {
+  /// 디스플레이 ID.
+  /// -1로 설정하는 경우 기본 디스플레이를 의미합니다.
+  /// -2로 설정하는 경우 전체 디스플레이 영역을 의미합니다.
   sfixed32 displayId = 1;
 }
 
