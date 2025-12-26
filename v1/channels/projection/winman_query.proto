@@ -100,7 +100,6 @@ enum WindowRole {
 
 /// # Window Hints
 /// - 효율적인 프로젝션을 위해 윈도우에 대한 힌트를 제공할 수 있습니다.
-/// @gemini, 이거 WindowInfoFlags랑 합치는게 좋을까요?
 enum WindowHint {
   WINDOW_HINT_NONE = 0x0000;
 
@@ -219,8 +218,10 @@ enum WindowListRequestFlags {
 
 // opcode = 0x8101
 message WindowListRequest {
+  fixed64 requestId = 1;
+
   /// 필터 조건
-  optional WindowFilter filter = 1;
+  optional WindowFilter filter = 2;
 
   /// 윈도우 목록 요청 플래그 (WindowListRequestFlags 참조)
   fixed32 flags = 16;
@@ -259,50 +260,51 @@ message WindowInfo {
 
 // opcode = 0x8042
 message WindowListResponse {
-  repeated WindowInfo windows = 1;
+  fixed64 requestId = 1;
+  repeated WindowInfo windows = 2;
 
   /// 페이지네이션 된 결과의 마지막 페이지인지 여부
-  bool isLastPage = 2;
+  bool isLastPage = 3;
 }
-
-/*
-# HELP ME, GEMINI!
-- 아래 request-response 모델들은 requestId 필드가 있어야 할까요? (= 어떤 요청에 대한 응답인지 식별하기 위해)
-- 타임스탬프도 있는게 좋겠죠...? ㅠ_ㅠ
- */
 
 // @message
 message GetWindowInfoRequest {
-  fixed64 windowId = 1;
+  fixed64 requestId = 1;
+  fixed64 windowId = 2;
 }
 
 // @message
 message GetWindowInfoResponse {
-  optional WindowInfo info = 1;
+  fixed64 requestId = 1;
+  optional WindowInfo info = 2;
 }
 
 // @message
 message GetWindowIconRequest {
-  fixed64 windowId = 1;
+  fixed64 requestId = 1;
+  fixed64 windowId = 2;
 }
 
 // @message
 message GetWindowIconResponse {
-  fixed64 windowId = 1;
+  fixed64 requestId = 1;
+  fixed64 windowId = 2;
   /// 이 윈도우의 아이콘 이미지 (PNG8 (with alpha channel) 형식, requires square aspect ratio, 최대 256x256)
-  optional bytes icon = 2;
+  optional bytes icon = 3;
 }
 
 // @message
 message GetWindowThumbnailRequest {
-  fixed64 windowId = 1;
+  fixed64 requestId = 1;
+  fixed64 windowId = 2;
 }
 
 // @message
 message GetWindowThumbnailResponse {
-  fixed64 windowId = 1;
+  fixed64 requestId = 1;
+  fixed64 windowId = 2;
   /// 이 윈도우의 섬네일 이미지 (PNG8 (with alpha channel) 형식, aspect ratio 유지, 최대 512x512)
-  optional bytes thumbnail = 2;
+  optional bytes thumbnail = 3;
 }
 
 enum WindowChangeEventType {
@@ -341,29 +343,33 @@ enum WindowEventSubscriptionFlags {
 }
 
 message SubscribeWindowEventsRequest {
+  fixed64 requestId = 1;
   /// 0x0000인 경우 모든 이벤트를 구독합니다.
-  fixed32 eventMask = 1;
+  fixed32 eventMask = 2;
   /// 비어있는 경우 모든 윈도우에 대한 이벤트를 구독합니다.
-  optional WindowFilter filter = 2;
+  optional WindowFilter filter = 3;
 
   fixed32 flags = 16; // reserved
 }
 
 message SubscribeWindowEventsResponse {
+  fixed64 requestId = 1;
   /// 구독 식별자.
-  UUID subscriptionId = 1;
+  UUID subscriptionId = 2;
 }
 
 message UnsubscribeWindowEventsRequest {
+  fixed64 requestId = 1;
   /// 구독 식별자.
-  UUID subscriptionId = 1;
+  UUID subscriptionId = 2;
 }
 
 message UnsubscribeWindowEventsResponse {
+  fixed64 requestId = 1;
   /// 구독 식별자.
-  UUID subscriptionId = 1;
+  UUID subscriptionId = 2;
   /// 구독 해제 성공 여부.
-  bool isSuccess = 2;
+  bool isSuccess = 3;
 }
 
 message WindowChangedEvent {
