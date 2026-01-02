@@ -4,6 +4,8 @@ package sirius.msgdef.v1.channels.projection;
 
 import "msgdef/general.proto";
 
+import "msgdef/v1/channels/projection/projection_typedef.proto";
+
 /// 전체 디스플레이를 프로젝션할 때 사용합니다.
 message EntireDisplayProjectionSource {
   /// 디스플레이 ID.
@@ -18,15 +20,7 @@ message DisplayRegionProjectionSource {
   /// -1로 설정하는 경우 기본 디스플레이를 의미합니다.
   /// -2로 설정하는 경우 전체 디스플레이 영역을 의미합니다.
   sfixed32 displayId = 1;
-
-  /// 왼쪽 위 모서리의 X 좌표
-  fixed32 x = 2;
-  /// 왼쪽 위 모서리의 Y 좌표
-  fixed32 y = 3;
-  /// 너비
-  fixed32 width = 4;
-  /// 높이
-  fixed32 height = 5;
+  SRRect region = 2;
 }
 
 enum SingleWindowProjectionSourceFlags {

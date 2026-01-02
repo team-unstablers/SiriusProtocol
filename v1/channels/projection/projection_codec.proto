@@ -4,6 +4,7 @@ package sirius.msgdef.v1.channels.projection;
 
 import "msgdef/general.proto";
 
+import "msgdef/v1/channels/projection/projection_typedef.proto";
 
 /*
 type sirius_fourcc_t = union {
@@ -132,8 +133,7 @@ message Codec {
   /// 초당 프레임 수. 값을 -1로 설정하는 경우 소스 (모니터)의 프레임레이트를 따릅니다.
   optional float frameRate = 9;
 
-  optional fixed32 width = 10;
-  optional fixed32 height = 11;
+  SRSize size = 10;
 
   /// "color-format: 'YUV444'; profile: 'high'; level: '4.2'" 등의 형식으로 코덱 옵션을 지정할 수 있습니다.
   /// eg)
