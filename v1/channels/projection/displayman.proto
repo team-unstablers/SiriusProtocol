@@ -13,6 +13,7 @@ import "msgdef/v1/channels/projection/projection_typedef.proto";
 /// 디스플레이 목록을 요청합니다. (request-response 모델)
 // opcode = 0x8201
 message DisplayListRequest {
+  fixed64 requestId = 1;
   fixed32 flags = 16; // reserved
 }
 
@@ -159,7 +160,8 @@ message DisplayInfo {
 /// 디스플레이 목록에 대한 응답 메시지.
 // opcode = 0x8202
 message DisplayListResponse {
-  repeated DisplayInfo displays = 1;
+  fixed64 requestId = 1;
+  repeated DisplayInfo displays = 2;
 }
 
 
@@ -184,32 +186,36 @@ enum DisplayChangeEventType {
 /// 서버로부터 디스플레이 변경 이벤트를 구독합니다.
 // opcode = 0x8203
 message SubscribeDisplayChangesRequest {
+  fixed64 requestId = 1;
   /// 0x0000인 경우 모든 이벤트를 구독합니다.
-  fixed32 eventMask = 1;
+  fixed32 eventMask = 2;
   fixed32 flags = 16; // reserved
 }
 
 /// SubscribeDisplayChangesRequest에 대한 응답 메시지.
 // opcode = 0x8204
 message SubscribeDisplayChangesResponse {
+  fixed64 requestId = 1;
   /// 구독 식별자.
-  UUID subscriptionId = 1;
+  UUID subscriptionId = 2;
 }
 
 /// 서버로부터 디스플레이 변경 이벤트를 구독 해제합니다.
 // opcode = 0x8205
 message UnsubscribeDisplayChangesRequest {
+  fixed64 requestId = 1;
   /// 구독 식별자.
-  UUID subscriptionId = 1;
+  UUID subscriptionId = 2;
 }
 
 /// UnsubscribeDisplayChangesRequest에 대한 응답 메시지.
 // opcode = 0x8206
 message UnsubscribeDisplayChangesResponse {
+  fixed64 requestId = 1;
   /// 구독 식별자.
-  UUID subscriptionId = 1;
+  UUID subscriptionId = 2;
   /// 구독 해제 성공 여부.
-  bool isSuccess = 2;
+  bool isSuccess = 3;
 }
 
 
@@ -218,7 +224,6 @@ message UnsubscribeDisplayChangesResponse {
 message DisplayChangedEvent {
   /// 이벤트 유형 코드
   fixed32 eventType = 1;
-
   /// 변경된 디스플레이 정보
   DisplayInfo display = 2;
 }
