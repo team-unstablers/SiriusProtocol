@@ -1,0 +1,39 @@
+syntax = "proto3";
+
+package sirius.msgdef.v1.channels.projection;
+
+import "msgdef/general.proto";
+
+import "msgdef/v1/channels/projection/projection_typedef.proto";
+
+message SubscribeCursorEventsRequest {
+    fixed64 requestId = 1;
+    fixed32 flags = 16; // reserved
+}
+
+message SubscribeCursorEventsResponse {
+    fixed64 requestId = 1;
+    /// 구독 식별자.
+    UUID subscriptionId = 2;
+}
+
+message UnsubscribeCursorEventsRequest {
+    fixed64 requestId = 1;
+    /// 구독 식별자.
+    UUID subscriptionId = 2;
+}
+
+message UnsubscribeCursorEventsResponse {
+    fixed64 requestId = 1;
+    /// 구독 식별자.
+    UUID subscriptionId = 2;
+    /// 구독 해제 성공 여부.
+    bool isSuccess = 3;
+}
+
+message CursorEvent {
+    fixed64 cursorType = 1;
+    string mimeType = 2;
+    SRSize size = 3;
+    bytes imageData = 4;
+}
