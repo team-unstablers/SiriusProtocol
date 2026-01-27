@@ -4,19 +4,39 @@ package sirius.msgdef.v1.channels.projection;
 
 import "msgdef/general.proto";
 
-enum AudioStreamKind {
-  // 기타 알 수 없는 유형의 오디오 스트림.
-  UNKNOWN = 0;
+/*
+# Projection: Audio
 
-  // 사용자 세션 전역의 오디오 루프백 스트림.
-  SESSION_AUDIO = 1;
+Audio Projection 관련 메시지 정의.
+Video Projection과 유사한 구조를 사용하되, 오디오 특성에 맞게 설계됨.
+*/
 
-  // 특정한 애플리케이션의 오디오 스트림.
-  APPLICATION_AUDIO = 2;
+// ═══════════════════════════════════════════════════════════════
+// Audio Codec Quality Types
+// ═══════════════════════════════════════════════════════════════
 
-  // 마이크 입력 오디오 스트림.
-  MICROPHONE_AUDIO = 3;
+/// CBR (Constant Bit Rate) 모드
+message AudioConstantBitrateQuality {
+  /// 고정 비트레이트 (kbps)
+  fixed32 bitrateKbps = 1;
 }
+
+/// VBR (Variable Bit Rate) 모드
+message AudioVariableBitrateQuality {
+  /// 최대 비트레이트 (kbps)
+  fixed32 maxBitrateKbps = 1;
+  /// 타겟 비트레이트 (kbps)
+  fixed32 targetBitrateKbps = 2;
+}
+
+/// 자동 품질 모드 (서버가 네트워크 상태에 따라 자동 조절)
+message AudioAutoQuality {
+  // 추후 확장을 위해 예약
+}
+
+// ═══════════════════════════════════════════════════════════════
+// Audio Codec
+// ═══════════════════════════════════════════════════════════════
 
 message AudioCodec {
   /// FourCC 코드
@@ -26,33 +46,134 @@ message AudioCodec {
   /// - 'PCMA': G.711 A-law
   fixed32 fourCC = 1;
 
-  /// 타겟 비트레이트 (kbps). 값을 0으로 설정하면 서버가 적절한 비트레이트를 선택합니다.
-  /// - 기본적으로 VBR(Variable Bit Rate) 모드로 작동합니다.
-  /// - CBR(Constant Bit Rate) 모드를 원할 경우, options 필드에 "bitrate-mode: cbr;" 옵션을 추가할 수 있습니다.
-  fixed32 bitRate = 2;
+  /// 품질 설정
+  oneof quality {
+    AudioConstantBitrateQuality constantBitrate = 2;  // CBR 모드
+    AudioVariableBitrateQuality variableBitrate = 3;  // VBR 모드
+    AudioAutoQuality auto = 4;                        // 자동 모드
+  }
 
   /// 샘플링 레이트 (Hz). 값을 0으로 설정하면 스트림의 기본 샘플링 레이트를 사용합니다.
-  fixed32 sampleRate = 3;
+  fixed32 sampleRate = 5;
   /// 채널 수. 값을 0으로 설정하면 스트림 / 코덱이 지원하는 기본 채널 수를 사용합니다.
-  fixed32 channelCount = 4;
+  fixed32 channelCount = 6;
 
   /// "frame-size: 20ms; stream-type: voice;" (opus) 등의 추가 옵션을 지정할 수 있습니다.
   optional string options = 15;
 }
 
+// ═══════════════════════════════════════════════════════════════
+// Audio Source Types
+// ═══════════════════════════════════════════════════════════════
+
+/// 세션 전역 오디오 루프백 소스
+message SessionAudioSource {
+  // 세션 전역 오디오 루프백 (추가 설정 필요 시 확장)
+}
+
+/// 특정 애플리케이션의 오디오 소스
+message ApplicationAudioSource {
+  oneof identifier {
+    /// 프로세스 ID
+    fixed64 pid = 1;
+    /// 앱 번들 ID (macOS)
+    string bundleId = 2;
+  }
+}
+
+/// 마이크 입력 소스
+message MicrophoneAudioSource {
+  /// 특정 마이크 장치 ID. 비어있으면 기본 마이크 사용.
+  optional string deviceId = 1;
+}
+
+/// 오디오 소스 (프로젝션할 오디오의 출처)
+message AudioSource {
+  oneof value {
+    SessionAudioSource sessionAudio = 1;        // 세션 전역 오디오 루프백
+    ApplicationAudioSource applicationAudio = 2; // 특정 앱 오디오
+    MicrophoneAudioSource microphone = 3;       // 마이크 입력
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════
+// Audio Session Enums
+// ═══════════════════════════════════════════════════════════════
+
+enum AudioSessionFailureReason {
+  AUDIO_SESSION_FAILURE_UNKNOWN = 0;
+  AUDIO_SESSION_FAILURE_SOURCE_NOT_FOUND = 1;
+  AUDIO_SESSION_FAILURE_CODEC_NOT_SUPPORTED = 2;
+  AUDIO_SESSION_FAILURE_PERMISSION_DENIED = 3;
+}
+
+enum AudioSessionChangeReason {
+  AUDIO_SESSION_CHANGE_UNKNOWN = 0;
+  AUDIO_SESSION_CHANGE_SOURCE_CHANGED = 1;
+  AUDIO_SESSION_CHANGE_CODEC_RENEGOTIATED = 2;
+}
+
+enum AudioSessionEndReason {
+  AUDIO_SESSION_END_UNKNOWN = 0;
+  AUDIO_SESSION_END_CLIENT_REQUESTED = 1;
+  AUDIO_SESSION_END_SOURCE_UNAVAILABLE = 2;
+  AUDIO_SESSION_END_ERROR = 3;
+}
+
+// ═══════════════════════════════════════════════════════════════
+// Audio Projection Request Messages
+// ═══════════════════════════════════════════════════════════════
+
 /// 오디오 스트림의 프로젝션을 요청합니다.
+// opcode = 0x80C1
 message AudioProjectionRequest {
   sirius.msgdef.UUID identifier = 1;
 
-  // 프로젝션할 오디오 스트림의 종류.
-  AudioStreamKind kind = 2;
-  // 특정 오디오 스트림을 지정하는 ID. 비어 있을 경우 기본 스트림이 선택됩니다.
-  // 예: APPLICATION_AUDIO의 경우 `pid:{pid}` 또는 `app-bundle-id:com.contoso.gameapp` 형태로 지정할 수 있습니다.
-  optional string streamID = 3;
-
-  repeated AudioCodec preferredCodecs = 4;
+  /// 프로젝션할 오디오 소스
+  AudioSource source = 2;
+  /// 선호하는 코덱 목록 (우선순위 순)
+  repeated AudioCodec preferredCodecs = 3;
 }
 
+/// 오디오 프로젝션 중지를 요청합니다.
+// opcode = 0x80C2
 message StopAudioProjectionRequest {
   sirius.msgdef.UUID identifier = 1;
+}
+
+// ═══════════════════════════════════════════════════════════════
+// Audio Session Event Messages
+// ═══════════════════════════════════════════════════════════════
+
+/// 오디오 세션이 성공적으로 생성되었을 때 발생하는 이벤트
+// opcode = 0x80C3
+message AudioSessionCreatedEvent {
+  sirius.msgdef.UUID identifier = 1;
+  AudioSource source = 2;
+  AudioCodec codec = 3;
+}
+
+/// 오디오 세션 생성이 실패했을 때 발생하는 이벤트
+// opcode = 0x80C4
+message AudioSessionCreationFailedEvent {
+  sirius.msgdef.UUID identifier = 1;
+  AudioSessionFailureReason reason = 2;
+  optional string message = 3;
+}
+
+/// 오디오 세션 설정이 변경되었을 때 발생하는 이벤트
+// opcode = 0x80C5
+message AudioSessionChangedEvent {
+  sirius.msgdef.UUID identifier = 1;
+  AudioSessionChangeReason reason = 2;
+  optional AudioSource source = 3;
+  optional AudioCodec codec = 4;
+}
+
+/// 오디오 세션이 종료되었을 때 발생하는 이벤트
+// opcode = 0x80C6
+message AudioSessionEndedEvent {
+  sirius.msgdef.UUID identifier = 1;
+  AudioSessionEndReason reason = 2;
+  optional string message = 3;
 }

@@ -6,23 +6,27 @@ import "msgdef/general.proto";
 
 import "msgdef/v1/channels/projection/projection_typedef.proto";
 
+// opcode = 0x80A1
 message SubscribeCursorEventsRequest {
     fixed64 requestId = 1;
     fixed32 flags = 16; // reserved
 }
 
+// opcode = 0x80A2
 message SubscribeCursorEventsResponse {
     fixed64 requestId = 1;
     /// 구독 식별자.
     UUID subscriptionId = 2;
 }
 
+// opcode = 0x80A3
 message UnsubscribeCursorEventsRequest {
     fixed64 requestId = 1;
     /// 구독 식별자.
     UUID subscriptionId = 2;
 }
 
+// opcode = 0x80A4
 message UnsubscribeCursorEventsResponse {
     fixed64 requestId = 1;
     /// 구독 식별자.
@@ -31,6 +35,7 @@ message UnsubscribeCursorEventsResponse {
     bool isSuccess = 3;
 }
 
+// opcode = 0x80A5
 message CursorEvent {
     fixed64 cursorType = 1;
     string mimeType = 2;

@@ -216,7 +216,7 @@ enum WindowListRequestFlags {
   WINDOW_LIST_REQUEST_FLAG_INCLUDE_HIDDEN_WINDOWS = 0x0002;
 }
 
-// opcode = 0x8101
+// opcode = 0x8061
 message WindowListRequest {
   fixed64 requestId = 1;
 
@@ -258,7 +258,7 @@ message WindowInfo {
   fixed32 flags = 15;
 }
 
-// opcode = 0x8042
+// opcode = 0x8062
 message WindowListResponse {
   fixed64 requestId = 1;
   repeated WindowInfo windows = 2;
@@ -267,25 +267,25 @@ message WindowListResponse {
   bool isLastPage = 3;
 }
 
-// @message
+// opcode = 0x8063
 message GetWindowInfoRequest {
   fixed64 requestId = 1;
   fixed64 windowId = 2;
 }
 
-// @message
+// opcode = 0x8064
 message GetWindowInfoResponse {
   fixed64 requestId = 1;
   optional WindowInfo info = 2;
 }
 
-// @message
+// opcode = 0x8065
 message GetWindowIconRequest {
   fixed64 requestId = 1;
   fixed64 windowId = 2;
 }
 
-// @message
+// opcode = 0x8066
 message GetWindowIconResponse {
   fixed64 requestId = 1;
   fixed64 windowId = 2;
@@ -293,13 +293,13 @@ message GetWindowIconResponse {
   optional bytes icon = 3;
 }
 
-// @message
+// opcode = 0x8067
 message GetWindowThumbnailRequest {
   fixed64 requestId = 1;
   fixed64 windowId = 2;
 }
 
-// @message
+// opcode = 0x8068
 message GetWindowThumbnailResponse {
   fixed64 requestId = 1;
   fixed64 windowId = 2;
@@ -342,6 +342,7 @@ enum WindowEventSubscriptionFlags {
   WINDOW_EVENT_SUBSCRIPTION_FLAG_MINIMAL_DATA = 0x0002;
 }
 
+// opcode = 0x8069
 message SubscribeWindowEventsRequest {
   fixed64 requestId = 1;
   /// 0x0000인 경우 모든 이벤트를 구독합니다.
@@ -352,18 +353,21 @@ message SubscribeWindowEventsRequest {
   fixed32 flags = 16; // reserved
 }
 
+// opcode = 0x806A
 message SubscribeWindowEventsResponse {
   fixed64 requestId = 1;
   /// 구독 식별자.
   UUID subscriptionId = 2;
 }
 
+// opcode = 0x806B
 message UnsubscribeWindowEventsRequest {
   fixed64 requestId = 1;
   /// 구독 식별자.
   UUID subscriptionId = 2;
 }
 
+// opcode = 0x806C
 message UnsubscribeWindowEventsResponse {
   fixed64 requestId = 1;
   /// 구독 식별자.
@@ -372,6 +376,7 @@ message UnsubscribeWindowEventsResponse {
   bool isSuccess = 3;
 }
 
+// opcode = 0x806D
 message WindowChangedEvent {
   /// 이벤트 유형 코드 (WindowChangeEventType 참조)
   fixed32 eventType = 1;

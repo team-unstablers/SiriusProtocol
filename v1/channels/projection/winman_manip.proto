@@ -29,7 +29,7 @@ enum WindowStateCommand {
 }
 
 // @gemini, 각 request-response pair에 identifier 필드가 있어야..겠죠..? ㅠ_ㅠ
-// opcode = 0x8043
+// opcode = 0x8081
 message WindowManipulationRequest {
   fixed64 windowId = 1;
 
@@ -64,6 +64,7 @@ message WindowManipulationRequest {
   fixed32 flags = 16;
 }
 
+// opcode = 0x8082
 message WindowManipulationResponse {
   bool isSuccess = 1;
 

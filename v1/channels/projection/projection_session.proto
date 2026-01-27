@@ -7,7 +7,7 @@ import "msgdef/general.proto";
 import "msgdef/v1/channels/projection/projection_codec.proto";
 import "msgdef/v1/channels/projection/projection_source.proto";
 
-// opcode = 0x8011
+// opcode = 0x8001
 message ProjectionRequest {
   sirius.msgdef.UUID identifier = 1;
 
@@ -15,7 +15,7 @@ message ProjectionRequest {
   repeated Codec preferredCodecs = 3;
 }
 
-// opcode = 0x8012
+// opcode = 0x8002
 message StopProjectionRequest {
   sirius.msgdef.UUID identifier = 1;
 }
@@ -29,7 +29,7 @@ message StopProjectionRequest {
 - 모든 프레임 카운트 필드는 마지막 보고서 이후로 수신된 프레임 수를 나타냅니다.
 
  */
-// opcode = 0x8013
+// opcode = 0x8003
 message ProjectionPerformanceReport {
   /// 프로젝션 세션 식별자
   sirius.msgdef.UUID identifier = 1;
