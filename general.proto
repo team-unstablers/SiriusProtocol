@@ -67,3 +67,11 @@ message ServerHello {
   /// 서버 정책에 따라 생략될 수 있음
   optional string motd = 4;
 }
+
+/// Graceful한 접속 종료 메시지.
+/// 서버에서도, 클라이언트에서도 전송할 수 있습니다.
+/// opcode = 0x0004
+message Goodbye {
+    fixed32 code = 1;
+    optional string message = 2;
+}
