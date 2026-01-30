@@ -1,0 +1,129 @@
+---
+syntax: "proto3"
+package: "sirius.extras.mdproto_example.messenger"
+import:
+  - "msgdef/general.proto"
+options:
+  java_package: "com.sirius.extras.mdproto.messenger"
+  csharp_namespace: "Sirius.Extras.Mdproto.Messenger"
+---
+
+# Messenger Protocol Example
+
+이 문서는 **MDProto** 형식을 사용하여 메신저 서비스의 프로토콜을 정의하는 예제입니다.
+MDProto를 사용하면 프로토콜 명세와 문서화를 동시에 수행할 수 있습니다.
+
+## 1. Data Structures
+
+기본적인 데이터 구조를 정의합니다.
+
+```protobuf
+message User {
+    /// 사용자 고유 식별자 (UUID)
+    string id = 1;
+    
+    /// 사용자 표시 이름
+    string name = 2;
+    
+    /// 이메일 주소 (Optional)
+    string email = 3;
+}
+
+message ChatMessage {
+    /// 메시지 보낸 사람
+    User sender = 1;
+    
+    /// 메시지 내용 (UTF-8 텍스트)
+    string content = 2;
+    
+    /// 전송 시간 (Unix Timestamp, ms)
+    int64 timestamp = 3;
+}
+```
+
+## 2. Message Flags
+
+메시지 속성을 정의하기 위해 `optionset`을 사용합니다.
+Protobuf는 기본적으로 비트마스크를 지원하지 않으므로, MDProto의 `optionset` 블록을 활용합니다.
+
+```optionset
+optionset MessengerMessageFlags {
+    /// 긴급 메시지 (알림 강조)
+    option FLAG_URGENT = 0x1;
+    
+    /// 읽음 확인 요청
+    option FLAG_READ_RECEIPT_REQUESTED = 0x2;
+    
+    /// 종단간 암호화 적용됨
+    option FLAG_ENCRYPTED = 0x4;
+}
+```
+
+## 3. Operations
+
+### 3.1 Send Message
+
+메시지를 전송하는 요청과 응답입니다.
+Opcode `0x9001`과 `0x9002`를 사용합니다.
+
+```protobuf
+// @opcode: 0x9001
+message SendMessageRequest {
+    /// 전송할 메시지 객체
+    ChatMessage message = 1;
+    
+    /// 메시지 속성 플래그
+    // @optionset: MessengerMessageFlags
+    uint32 flags = 2;
+}
+
+// @opcode: 0x9002
+message SendMessageResponse {
+    /// 전송 성공 여부
+    bool success = 1;
+    
+    /// 실패 시 에러 메시지
+    string error_message = 2;
+}
+```
+
+### 3.2 Media Extensions
+
+이미지나 파일 전송을 위한 확장 필드입니다.
+`fourCC` 필드는 레거시 시스템 호환성을 위해 **Big Endian**으로 인코딩되어야 합니다.
+
+```protobuf
+message MediaMetadata {
+    /// 미디어 코덱 식별자 (FourCC)
+    // @ensure_byte_order: BIG_ENDIAN
+    fixed32 codec_fourcc = 1;
+    
+    /// 미디어 크기 (Bytes)
+    uint64 size = 2;
+}
+```
+
+## 4. Client Metadata
+
+클라이언트의 환경 정보를 정의합니다. `constset`을 사용하여 플랫폼 식별자를 정의하며, 이는 새로운 플랫폼이 추가되어도 하위 호환성을 유지할 수 있는 Open Set입니다.
+
+```constset
+constset PlatformType : string {
+    const IOS = "ios";
+    const ANDROID = "android";
+    const MACOS = "macos";
+    const WINDOWS = "windows";
+    const WEB = "web";
+}
+```
+
+```protobuf
+message ClientInfo {
+    /// 클라이언트가 동작 중인 플랫폼
+    // @constset: PlatformType
+    string platform = 1;
+    
+    /// 앱 버전 (e.g., "1.2.3")
+    string app_version = 2;
+}
+```
