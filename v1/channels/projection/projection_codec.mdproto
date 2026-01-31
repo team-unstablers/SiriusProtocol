@@ -8,6 +8,14 @@ import:
 
 # PROJECTION CODEC DEFINITIONS
 
+비디오 프로젝션을 위한 코덱 및 품질 설정 정의입니다.
+
+---
+
+# CONSTANTS
+
+## CodecFourCC
+
 ```c++
 type sirius_fourcc_t = union {
     char code[4];
@@ -29,106 +37,104 @@ namespace CodecFourCC {
 }
 ```
 
+## AutoQualityMode
 
-## 자동 품질 모드에 대한 프리셋
-- 자동 품질 모드는 서버 / 코덱이 클라이언트의 성능과 네트워크 상태를 고려하여 최적의 품질 설정을 자동으로 선택하도록 합니다.
+```constset
+constset AutoQualityMode: uint32 {
+  /// 품질과 성능 간의 균형을 맞춥니다.
+  const balancedPriority = 0;
 
-### 각 모드 설명
-- AUTO_QUALITY_MODE_BALANCED_PRIORITY: 품질과 성능 간의 균형을 맞춥니다.
-- AUTO_QUALITY_MODE_QUALITY_PRIORITY: 가능한 최고의 품질을 우선시합니다.
-- AUTO_QUALITY_MODE_PERFORMANCE_PRIORITY: 가능한 최고의 성능을 우선시합니다.
-
-```protobuf
-enum AutoQualityMode {
-  AUTO_QUALITY_MODE_BALANCED_PRIORITY = 0;
-
-  AUTO_QUALITY_MODE_QUALITY_PRIORITY = 1;
-  AUTO_QUALITY_MODE_PERFORMANCE_PRIORITY = 2;
-}
-
-message AutoQuality {
-  AutoQualityMode mode = 1;
+  /// 가능한 최고의 품질을 우선시합니다.
+  const qualityPriority = 1;
+  
+  /// 가능한 최고의 성능을 우선시합니다.
+  const performancePriority = 2;
 }
 ```
 
-## 상수 비트레이트 품질 설정
-- 지정된 비트레이트로 일정한 품질을 유지합니다.
+## LosslessQualityMode
 
-### NOTE:
-- 상수 비트레이트 품질 설정 시, 구현체 / 정책 설정에 따라 네트워크 / 호스트 부하에 따른 자동 디그레이드 기능이 동작하지 않을 수 있습니다.
+```constset
+constset LosslessQualityMode: uint32 {
+  /// 성능과 압축률 간의 균형을 맞춥니다.
+  const balancedPriority = 0;
+
+  /// 성능을 우선시합니다. (압축률이 낮아질 수 있음)
+  const speedPriority = 1;
+  
+  /// 압축률을 우선시합니다. (성능이 낮아질 수 있음)
+  const compressionPriority = 2;
+}
+```
+
+---
+
+# MESSAGE DEFINITIONS
+
+## AutoQuality
 
 ```protobuf
+/// 자동 품질 모드 (서버가 네트워크 상태에 따라 자동 조절)
+message AutoQuality {
+  // @constset: AutoQualityMode
+  uint32 mode = 1;
+}
+```
+
+## ConstantBitrateQuality
+
+```protobuf
+/// 상수 비트레이트 (CBR) 품질 설정
 message ConstantBitrateQuality {
+  /// 비트레이트 (kbps)
   sfixed32 bitrateKbps = 1;
 }
 ```
 
-## 가변 비트레이트 품질 설정
-- 최대 비트레이트와 목표 비트레이트를 지정합니다.
-
-### NOTE:
-- 가변 비트레이트 품질 설정 시, 구현체 / 정책 설정에 따라 네트워크 / 호스트 부하에 따른 자동 디그레이드 기능이 동작하지 않을 수 있습니다.
+## VariableBitrateQuality
 
 ```protobuf
+/// 가변 비트레이트 (VBR) 품질 설정
 message VariableBitrateQuality {
+  /// 최대 비트레이트 (kbps)
   sfixed32 maxBitrateKbps = 1;
+  /// 타겟 비트레이트 (kbps)
   sfixed32 targetBitrateKbps = 2;
 }
 ```
 
-## 고정 품질 설정
-- 0부터 100까지의 값으로 품질을 지정합니다.
-- 값이 낮을수록 더 높은 품질을 나타냅니다.
-
-### NOTE:
-- 고정 품질 설정 시, 구현체 / 정책 설정에 따라 네트워크 / 호스트 부하에 따른 자동 디그레이드 기능이 동작하지 않을 수 있습니다.
+## FixedQuality
 
 ```protobuf
+/// 고정 품질 (CQP/CRF) 설정
+/// - 0부터 100까지의 값으로 품질을 지정합니다.
+/// - 값이 낮을수록 더 높은 품질을 나타낼 수도 있고, 반대일 수도 있으나 일반적으로 100이 최고 품질입니다. (구현체 의존적)
 message FixedQuality {
   sfixed32 quality = 1;
 }
 ```
 
-## 무손실 품질 모드에 대한 프리셋
-- 무손실 압축을 사용할 때, 성능과 압축률 간의 균형을 맞추기 위한 프리셋입니다.
-
-### 각 모드 설명
-- LOSSLESS_QUALITY_MODE_BALANCED_PRIORITY: 성능과 압축률 간의 균형을 맞춥니다.
-- LOSSLESS_QUALITY_MODE_SPEED_PRIORITY: 성능을 우선시합니다. (압축률이 낮아질 수 있음)
-- LOSSLESS_QUALITY_MODE_COMPRESSION_PRIORITY: 압축률을 우선시합니다. (성능이 낮아질 수 있음)
+## LosslessQuality
 
 ```protobuf
-enum LosslessQualityMode {
-  LOSSLESS_QUALITY_MODE_BALANCED_PRIORITY = 0;
-
-  LOSSLESS_QUALITY_MODE_SPEED_PRIORITY = 1;
-  LOSSLESS_QUALITY_MODE_COMPRESSION_PRIORITY = 2;
+/// 무손실 품질 설정
+/// - 무손실 압축을 사용하여 품질 저하 없이 데이터를 전송합니다.
+message LosslessQuality {
+  // @constset: LosslessQualityMode
+  uint32 mode = 1;
 }
 ```
 
-## 무손실 품질 설정
-- 무손실 압축을 사용하여 품질 저하 없이 데이터를 전송합니다.
-- LAN 환경과 같이 높은 대역폭이 보장되는 환경에서, Final Cut Pro, Adobe Photoshop 등과 같은 고품질 그래픽 작업에 적합합니다.
-
-### NOTE:
-- 무손실 품질 설정 시, 기본적으로 자동 디그레이드 기능이 비활성화됩니다.
-- 고품질 그래픽 작업 (Final Cut Pro, Adobe Photoshop 등)을 사용하려는 목적인 경우, 다음 설정이 추가적으로 필요할 수도 있습니다.
-  - 코덱의 뷰포트 해상도를 원본과 동일하게 설정하여 픽셀 단위의 왜곡을 방지합니다.
-  - 코덱의 color-format 옵션을 YUV444 (추가적으로 HDR 지원이 필요한 경우 YUV444 10bit 이상)로 설정하여 색상 손실을 방지합니다.
-  - 코덱의 프레임레이트 옵션을 원본과 동일하게 설정하여 프레임 손실을 방지합니다.
+## Codec
 
 ```protobuf
-message LosslessQuality {
-  LosslessQualityMode mode = 1;
-}
-
+/// 비디오 코덱 설정 메시지
 message Codec {
-  /// FourCC 코드값
-  /// - 바이트 오더는 반드시 빅 엔디안이어야 합니다.
+  /// FourCC 코드값 (Big-Endian)
+  // @constset: CodecFourCC
   fixed32 fourCC = 1;
 
   /// 코덱 품질 설정
-  /// -
   oneof quality {
     ConstantBitrateQuality constantBitrate = 2;
     VariableBitrateQuality variableBitrate = 3;
@@ -140,17 +146,15 @@ message Codec {
   /// 초당 프레임 수. 값을 -1로 설정하는 경우 소스 (모니터)의 프레임레이트를 따릅니다.
   optional float frameRate = 9;
 
+  /// 해상도
   SRSize size = 10;
 
-  /// "color-format: 'YUV444'; profile: 'high'; level: '4.2'" 등의 형식으로 코덱 옵션을 지정할 수 있습니다.
-  /// eg)
-  ///     color-format: 'YUV444'; hardware-acceleration: 'true'; profile: 'high'; level: '4.2';
-
+  /// 코덱별 추가 옵션 문자열 (예: "color-format: 'YUV444'; hardware-acceleration: 'true'; profile: 'high';")
   optional string options = 15;
 }
 ```
 
 # IMPLEMENTATION NOTES
-- fourCC 필드는 반드시 빅 엔디안 바이트 오더로 인코딩되어야 합니다.
-- ConstantBitrateQuality, VariableBitrateQuality를 제외한 나머지는 optional한 구현 사항입니다.
+- `fourCC` 필드는 반드시 빅 엔디안 바이트 오더로 인코딩되어야 합니다.
+- `ConstantBitrateQuality`, `VariableBitrateQuality`를 제외한 나머지는 optional한 구현 사항입니다.
   (서버 / 클라이언트 구현체가 해당 품질 설정을 지원하지 않을 수 있습니다.)
