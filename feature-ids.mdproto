@@ -1,0 +1,26 @@
+---
+syntax: "proto3"
+package: "sirius.msgdef"
+---
+
+# FEATURE IDENTIFIERS
+
+- TODO: feature id는 uuid 타입임을 서술한다
+- TODO: feature id는 기능을 식별하는 고유한 식별자임을 서술한다
+- TODO: feature id는 기능 협상 및 활성화에 사용됨을 서술한다
+- TODO: feature id는 하기 constset에 정의된 값 외에도 필요에 따라 구현자가 확장 가능함을 서술한다
+
+## KNOWN FEATURE IDS
+
+```constset
+constset SiriusFeatureID: UUID {
+    /// HIDIO: 키보드 / 마우스 등의 HID 입력을 리디렉션합니다.
+    const hidio = uuid"405E6E75-8B64-4E8F-91FF-E9E5A2C6BC77"
+    
+    /// Projection: 화면 캡쳐를 설정하고 제어합니다.
+    const projection = uuid"362A7AF0-2AC0-48DE-8F6B-5DB5D01E99DC"
+    
+    /// ProjectionData: 화면 캡쳐 데이터를 전송합니다.
+    const projectionData = uuid"CDE57E7B-9528-47F7-8FEC-14389301A990"
+}
+```
