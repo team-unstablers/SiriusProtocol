@@ -8,6 +8,96 @@ import:
 
 # PROJECTION DISPLAY MANAGEMENT
 
+---
+
+# CONSTANTS
+
+## DisplayKind
+
+```constset
+constset DisplayKind: uint32 {
+  /// 알 수 없는 디스플레이 종류.
+  const unknown = 0;
+  /// 내부 디스플레이 (노트북 내장 디스플레이 등)
+  const internal = 1;
+  /// 외부 디스플레이 (모니터 장비 등)
+  const external = 2;
+  /// 가상 디스플레이 (예: 무선 디스플레이 어댑터 등)
+  const virtual = 3;
+}
+```
+
+## DisplayColorDepth
+
+```constset
+constset DisplayColorDepth: uint32 {
+  /// 알 수 없는 컬러 깊이
+  const unknown = 0;
+
+  /// 흑백(그레이스케일) 컬러 깊이
+  const grayscale = 1;
+
+  /// 인덱스 (팔레트가 정의된) 16색 컬러
+  const indexed16Color = 2;
+
+  /// 인덱스 (팔레트가 정의된) 256색 컬러
+  const indexed256Color = 3;
+
+  /// 8비트 컬러 (RGB8, 0~255)
+  const bit8 = 4;
+
+  /// 10비트 컬러 (RGB10, 0~1023)
+  const bit10 = 5;
+}
+```
+
+## DisplayColorProfile
+
+```constset
+constset DisplayColorProfile: string {
+    /// sRGB 색상 프로파일
+    const sRGB = "sRGB";
+    /// Adobe RGB 색상 프로파일
+    const adobeRGB = "AdobeRGB";
+    /// DCI-P3 색상 프로파일
+    const dciP3 = "DCI-P3";
+}
+```
+
+## DisplayDynamicRange
+
+```constset
+constset DisplayDynamicRange: uint32 {
+  /// 표준 다이나믹 레인지 (SDR)
+  const sdr = 0;
+
+  /// 하이 다이나믹 레인지 (HDR)
+  const hdr = 1;
+}
+```
+
+## DisplayChangeEventType
+
+```optionset
+optionset DisplayChangeEventType: uint32 {
+  /// 디스플레이가 연결되었습니다.
+  option connected = 0x0001;
+
+  /// 디스플레이가 연결 해제되었습니다.
+  option disconnected = 0x0002;
+
+  /// 디스플레이의 지오메트리 / 색상 정보 등이 변경되었습니다.
+  option modified = 0x0004;
+
+  /// 디스플레이가 기본 디스플레이로 설정되었습니다.
+  option becamePrimary = 0x0008;
+}
+```
+
+---
+
+# MESSAGE DEFINITIONS
+
 ```protobuf
 /// 디스플레이 목록을 요청합니다. (request-response 모델)
 // @opcode: 0x8041
@@ -15,81 +105,9 @@ message DisplayListRequest {
   fixed64 requestId = 1;
   fixed32 flags = 16; // reserved
 }
-
-enum DisplayKind {
-  /// 알 수 없는 디스플레이 종류.
-  DISPLAY_KIND_UNKNOWN = 0;
-  /// 내부 디스플레이 (노트북 내장 디스플레이 등)
-  DISPLAY_KIND_INTERNAL = 1;
-  /// 외부 디스플레이 (모니터 장비 등)
-  DISPLAY_KIND_EXTERNAL = 2;
-  /// 가상 디스플레이 (예: 무선 디스플레이 어댑터 등)
-  DISPLAY_KIND_VIRTUAL = 3;
-}
-
-enum DisplayColorDepth {
-  /// 알 수 없는 컬러 깊이
-  DISPLAY_COLOR_DEPTH_UNKNOWN = 0;
-
-  /// 흑백(그레이스케일) 컬러 깊이
-  DISPLAY_COLOR_DEPTH_GRAYSCALE = 1;
-
-  /// 인덱스 (팔레트가 정의된) 16색 컬러
-  DISPLAY_COLOR_DEPTH_INDEXED_16_COLOR = 2;
-
-  /// 인덱스 (팔레트가 정의된) 256색 컬러
-  DISPLAY_COLOR_DEPTH_INDEXED_256_COLOR = 3;
-
-  /// 8비트 컬러 (RGB8, 0~255)
-  DISPLAY_COLOR_DEPTH_8BIT = 4;
-
-  /// 10비트 컬러 (RGB10, 0~1023)
-  DISPLAY_COLOR_DEPTH_10BIT = 5;
-}
-```
-
-## DisplayColorProfile
-- 디스플레이의 색상 프로파일을 나타냅니다.
-
-### PRE-DEFINED PROFILES
-
-```swift
-struct DisplayColorProfile: RawRepresentable {
-    var rawValue: String
-
-    /// sRGB 색상 프로파일
-    static let sRGB = DisplayColorProfile(rawValue: "sRGB")
-    /// Adobe RGB 색상 프로파일
-    static let adobeRGB = DisplayColorProfile(rawValue: "AdobeRGB")
-    /// DCI-P3 색상 프로파일
-    static let dciP3 = DisplayColorProfile(rawValue: "DCI-P3")
-
-    /// TODO: 뭐가 더 필요하지?
-}
-```
-
-### 'CUSTOM' PROFILE
-- 'CUSTOM' 프로파일은 상기 사전 정의된 프로파일 외에, 사용자 / 모니터에서 정의한 별도의 색상 프로파일을 나타냅니다.
-<!-- @gemini, 이거 너무 과한가요? -->
-- 이 경우, 추가적인 색상 프로파일 데이터 (ICC 프로파일 등)를 별도로 수신받을 수 있습니다. (see DisplayColorProfileRequest message)
-  - 모든 서버 구현체가 이 기능을 지원하는 것은 아닙니다.
-
-```swift
-extension DisplayColorProfile {
-  /// 예시
-  static let LGUltraFine5K = DisplayColorProfile(rawValue: "LG UltraFine 5K")
-}
 ```
 
 ```protobuf
-enum DisplayDynamicRange {
-  /// 표준 다이나믹 레인지 (SDR)
-  DISPLAY_DYNAMIC_RANGE_SDR = 0;
-
-  /// 하이 다이나믹 레인지 (HDR)
-  DISPLAY_DYNAMIC_RANGE_HDR = 1;
-}
-
 message DisplayState {
   /// 디스플레이가 메인 디스플레이인지 여부
   bool isPrimary = 1;
@@ -114,7 +132,8 @@ message DisplayInfo {
   fixed32 displayID = 1;
 
   /// 디스플레이 종류.
-  DisplayKind kind = 2;
+  // @constset: DisplayKind
+  uint32 kind = 2;
 
   /// 디스플레이 (모니터 장비)의 표시 이름.
   /// @note 이 값은 서버 구현체에 따라 비어있을 수 있거나 표준적이지 않을 수 있습니다.
@@ -138,12 +157,16 @@ message DisplayInfo {
   float refreshRate = 6;
 
   /// 디스플레이의 색상 깊이
-  DisplayColorDepth colorDepth = 7;
+  // @constset: DisplayColorDepth
+  uint32 colorDepth = 7;
 
   /// 디스플레이의 다이나믹 레인지
-  DisplayDynamicRange dynamicRange = 8;
+  // @constset: DisplayDynamicRange
+  uint32 dynamicRange = 8;
 
   /// 디스플레이의 색상 프로파일
+  // @constset: DisplayColorProfile
+  // 'CUSTOM' 프로파일은 상기 사전 정의된 프로파일 외에, 사용자 / 모니터에서 정의한 별도의 색상 프로파일을 나타냅니다.
   optional string colorProfile = 9;
 
   /// 디스플레이의 물리적 크기 정보
@@ -167,30 +190,12 @@ message DisplayListResponse {
   repeated DisplayInfo displays = 2;
 }
 
-
-/// 상수 정의용. protobuf의 enum은 signed인 탓도 있으므로 이 타입을 직접 사용하지 마십시오.
-enum DisplayChangeEventType {
-  /// 사용 금지
-  DISPLAY_CHANGE_EVENT_TYPE_NONE = 0;
-
-  /// 디스플레이가 연결되었습니다.
-  DISPLAY_CHANGE_EVENT_TYPE_CONNECTED = 0x0001;
-
-  /// 디스플레이가 연결 해제되었습니다.
-  DISPLAY_CHANGE_EVENT_TYPE_DISCONNECTED = 0x0002;
-
-  /// 디스플레이의 지오메트리 / 색상 정보 등이 변경되었습니다.
-  DISPLAY_CHANGE_EVENT_TYPE_MODIFIED = 0x0004;
-
-  /// 디스플레이가 기본 디스플레이로 설정되었습니다.
-  DISPLAY_CHANGE_EVENT_TYPE_BECAME_PRIMARY = 0x0008;
-}
-
 /// 서버로부터 디스플레이 변경 이벤트를 구독합니다.
 // @opcode: 0x8043
 message SubscribeDisplayChangesRequest {
   fixed64 requestId = 1;
   /// 0x0000인 경우 모든 이벤트를 구독합니다.
+  // @optionset: DisplayChangeEventType
   fixed32 eventMask = 2;
   fixed32 flags = 16; // reserved
 }
@@ -226,6 +231,7 @@ message UnsubscribeDisplayChangesResponse {
 // @opcode: 0x8047
 message DisplayChangedEvent {
   /// 이벤트 유형 코드
+  // @optionset: DisplayChangeEventType
   fixed32 eventType = 1;
   /// 변경된 디스플레이 정보
   DisplayInfo display = 2;

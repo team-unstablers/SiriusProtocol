@@ -9,60 +9,96 @@ import:
 
 마우스 입력 이벤트 관련 메시지 정의입니다.
 
+---
+
+# CONSTANTS
+
+## MouseMoveEventType
+
+```constset
+constset MouseMoveEventType: fixed32 {
+  /// 절대 좌표 이동 (화면의 특정 위치로 커서 이동)
+  const absolute = 0;
+  
+  /// 상대 좌표 이동 (현재 위치에서 특정 델타만큼 커서 이동)
+  const relative = 1;
+}
+```
+
+## MouseButtonEventType
+
+```constset
+constset MouseButtonEventType: fixed32 {
+  /// 마우스 버튼 눌림
+  const down = 0;
+  
+  /// 마우스 버튼 뗌
+  const up = 1;
+}
+```
+
+## MouseButtonType
+
+```constset
+constset MouseButtonType: fixed32 {
+  const left = 0;
+  const right = 1;
+  const middle = 2;
+  const back = 3;
+  const forward = 4;
+}
+```
+
+---
+
+# MESSAGE DEFINITIONS
+
+## CursorPositionPixel
+
 ```protobuf
-enum MouseMoveEventType {
-  MOUSE_MOVE_ABSOLUTE = 0;
-  MOUSE_MOVE_RELATIVE = 1;
-}
-
-enum MouseButtonEventType {
-  MOUSE_BUTTON_DOWN = 0;
-  MOUSE_BUTTON_UP = 1;
-}
-
-enum MouseButtonType {
-  MOUSE_BUTTON_LEFT = 0;
-  MOUSE_BUTTON_RIGHT = 1;
-  MOUSE_BUTTON_MIDDLE = 2;
-  MOUSE_BUTTON_BACK = 3;
-  MOUSE_BUTTON_FORWARD = 4;
-}
-
-
 message CursorPositionPixel {
-  // 왼쪽 위 모서리를 기준으로 한 픽셀 좌표
+  /// 왼쪽 위 모서리를 기준으로 한 픽셀 좌표
   sfixed32 x = 1;
-  // 왼쪽 위 모서리를 기준으로 한 픽셀 좌표
+  /// 왼쪽 위 모서리를 기준으로 한 픽셀 좌표
   sfixed32 y = 2;
 }
+```
 
+## CursorPositionPercent
+
+```protobuf
 message CursorPositionPercent {
-  // 0.0 ~ 1.0 범위의 값; 왼쪽 위 모서리를 기준으로 함
+  /// 0.0 ~ 1.0 범위의 값; 왼쪽 위 모서리를 기준으로 함
   float x = 1;
-  // 0.0 ~ 1.0 범위의 값; 왼쪽 위 모서리를 기준으로 함
+  /// 0.0 ~ 1.0 범위의 값; 왼쪽 위 모서리를 기준으로 함
   float y = 2;
 }
+```
 
+## CursorPositionScope
+
+```protobuf
 message CursorPositionScope {
   oneof scope {
-    // 한 디스플레이의 전체 영역을 기준으로 합니다.
-    // - 만약 이 필드의 값을 -1로 설정하는 경우 기본 디스플레이를 의미합니다.
-    // - 만약 이 필드의 값을 -2로 설정하는 경우 전체 화면 영역 (멀티 디스플레이 환경에서 모든 디스플레이를 포함한 영역)를 의미합니다.
+    /// 한 디스플레이의 전체 영역을 기준으로 합니다.
+    /// - 만약 이 필드의 값을 -1로 설정하는 경우 기본 디스플레이를 의미합니다.
+    /// - 만약 이 필드의 값을 -2로 설정하는 경우 전체 화면 영역 (멀티 디스플레이 환경에서 모든 디스플레이를 포함한 영역)를 의미합니다.
     sfixed32 displayId = 1;
 
-    // 특정 윈도우 ID(핸들)을 기준으로 합니다.
+    /// 특정 윈도우 ID(핸들)을 기준으로 합니다.
     sfixed64 windowId = 2;
   }
 }
 ```
 
-## MOUSE MOVE EVENT
-- MouseMoveEvent 메시지는 마우스 이동 이벤트를 나타냅니다.
-- moveType 필드는 절대 좌표 이동과 상대 좌표 이동을 구분합니다.
+## MouseMoveEvent
 
 ```protobuf
+/// 마우스 이동 이벤트를 나타내는 메시지
 message MouseMoveEvent {
-  MouseMoveEventType moveType = 1;
+  // @constset: MouseMoveEventType
+  fixed32 moveType = 1;
+  
   CursorPositionScope scope = 2;
 
   oneof position {
@@ -70,14 +106,29 @@ message MouseMoveEvent {
     CursorPositionPercent percent = 4;
   }
 }
+```
 
+## MouseButtonEvent
+
+```protobuf
+/// 마우스 버튼 입력 이벤트를 나타내는 메시지
 message MouseButtonEvent {
-  MouseButtonEventType eventType = 1;
-  MouseButtonType button = 2;
+  // @constset: MouseButtonEventType
+  fixed32 eventType = 1;
+  
+  // @constset: MouseButtonType
+  fixed32 button = 2;
 }
+```
 
+## MouseWheelEvent
+
+```protobuf
+/// 마우스 휠 이벤트를 나타내는 메시지
 message MouseWheelEvent {
+  /// 수평 휠 델타
   float deltaX = 1;
+  /// 수직 휠 델타
   float deltaY = 2;
 }
 ```
