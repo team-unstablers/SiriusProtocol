@@ -2,7 +2,7 @@
 syntax: "proto3"
 package: "sirius.msgdef.v1.channels.hidio"
 import:
-  - "msgdef/general.proto"
+  - "msgdef/common-types.proto"
   - "msgdef/v1/channels/hidio/hid_keyboard.proto"
   - "msgdef/v1/channels/hidio/hid_mouse.proto"
   - "msgdef/v1/channels/hidio/hid_raw.proto"

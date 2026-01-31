@@ -2,7 +2,7 @@
 syntax: "proto3"
 package: "sirius.msgdef.v1"
 import:
-  - "msgdef/general.proto"
+  - "msgdef/common-types.proto"
 ---
 
 # ABOUT CHANNELS
@@ -24,7 +24,7 @@ import:
 - *NOTE*: 메인 채널 (연결 수립 직후 열리는 스트림)은 별도의 채널 오픈 절차 없이 사용되어야 합니다.
 
 ```protobuf
-/// @opcode: 0x0021
+// @opcode: 0x0021
 message ChannelStartRequest {
   SRUUID featureId = 1;
   SRUUID channelId = 2;
@@ -37,7 +37,7 @@ message ChannelStartRequest {
 - 응답 메시지에는 채널 오픈의 성공 여부와, 실패 시 이유를 포함할 수 있습니다.
 
 ```protobuf
-/// @opcode: 0x0022
+// @opcode: 0x0022
 message ChannelStartResponse {
   bool success = 1;
   // TODO: reason, error code?
@@ -48,7 +48,7 @@ message ChannelStartResponse {
 - 채널을 닫기 위해, 서버/클라이언트는 채널 닫기 요청 메시지를 상대방에게 보냅니다.
 
 ```protobuf
-/// @opcode: 0x0023
+// @opcode: 0x0023
 message ChannelCloseRequest {
   // TODO: reason
 }

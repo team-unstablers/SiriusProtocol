@@ -2,7 +2,7 @@
 syntax: "proto3"
 package: "sirius.msgdef.v1.channels.projection"
 import:
-  - "msgdef/general.proto"
+  - "msgdef/common-types.proto"
   - "msgdef/v1/channels/projection/projection_typedef.proto"
 ---
 
