@@ -12,7 +12,7 @@ import:
 ```protobuf
 message ClipboardData {
   string contentType = 1;
-  fixed64 size = 2;
+  uint64 size = 2;
 
   /// 2KB 이하의 데이터는 여기에 포함될 수 있습니다.
   // TODO: 대용량 데이터 전송 방법 정의
@@ -21,7 +21,7 @@ message ClipboardData {
 
 // @opcode: 0x8001
 message ClipboardEvent {
-  fixed64 timestamp = 1;
+  uint64 timestamp = 1;
   ClipboardData data = 2;
 }
 ```

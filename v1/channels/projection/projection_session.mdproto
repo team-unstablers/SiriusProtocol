@@ -38,14 +38,14 @@ message ProjectionPerformanceReport {
   SRUUID identifier = 1;
 
   /// 인터벌동안 수신된 프레임 수
-  fixed32 receivedFrameCount = 2;
+  uint32 receivedFrameCount = 2;
   /// 인터벌동안 디코드에 성공한 프레임 수
-  fixed32 decodedFrameCount = 3;
+  uint32 decodedFrameCount = 3;
   /// 인터벌동안 드롭된 프레임 수
-  fixed32 droppedFrameCount = 4;
+  uint32 droppedFrameCount = 4;
 
   // 인터벌 동안의 평균 디코딩 시간 (밀리초 단위)
-  fixed32 averageDecodeTimeMs = 5;
+  uint32 averageDecodeTimeMs = 5;
 }
 
 // @opcode: 0x8021
@@ -59,7 +59,7 @@ message ProjectionSessionCreatedEvent {
 // @opcode: 0x8022
 message ProjectionSessionCreationFailedEvent {
   SRUUID identifier = 1;
-  sfixed32 reason = 2;
+  int32 reason = 2;
 
   optional string message = 3;
 }
@@ -67,7 +67,7 @@ message ProjectionSessionCreationFailedEvent {
 // @opcode: 0x8023
 message ProjectionSessionChangedEvent {
   SRUUID identifier = 1;
-  sfixed32 reason = 2;
+  int32 reason = 2;
 
   ProjectionSource source = 3;
   Codec codec = 4;
@@ -76,7 +76,7 @@ message ProjectionSessionChangedEvent {
 // @opcode: 0x8024
 message ProjectionSessionEndedEvent {
   SRUUID identifier = 1;
-  sfixed32 reason = 2;
+  int32 reason = 2;
 
   optional string message = 3;
 }

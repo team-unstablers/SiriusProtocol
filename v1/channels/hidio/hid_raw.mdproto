@@ -13,13 +13,13 @@ import:
 
 ```protobuf
 message RawEvent {
-  fixed32 id = 1;
-  fixed32 type = 2;
+  uint32 id = 1;
+  uint32 type = 2;
 
   // HID 장치 식별자 (vendor)
-  fixed32 vendor = 3;
+  uint32 vendor = 3;
   // HID 장치 식별자 (product)
-  fixed32 product = 4;
+  uint32 product = 4;
 
   // 이벤트 파라미터 (#1 ~ #4)
   // - 구체적인 의미는 장치 및 이벤트 유형에 따라 다릅니다.

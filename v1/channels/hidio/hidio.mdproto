@@ -20,8 +20,8 @@ import:
 ```protobuf
 // @opcode: 0x8001
 message HIDIOPacket {
-  fixed64 sequenceNumber = 1;
-  fixed64 timestamp = 2;
+  uint64 sequenceNumber = 1;
+  uint64 timestamp = 2;
 
   // 애플리케이션에서는 가능한 한 여러 이벤트를 하나의 패킷에 묶어서 전송하는 것이 좋습니다.
   repeated HIDEvent events = 3;

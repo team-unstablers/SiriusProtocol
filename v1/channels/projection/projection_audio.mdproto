@@ -79,15 +79,15 @@ constset AudioSessionEndReason: uint32 {
 /// CBR (Constant Bit Rate) 모드 설정
 message AudioConstantBitrateQuality {
   /// 고정 비트레이트 (kbps)
-  fixed32 bitrateKbps = 1;
+  uint32 bitrateKbps = 1;
 }
 
 /// VBR (Variable Bit Rate) 모드 설정
 message AudioVariableBitrateQuality {
   /// 최대 비트레이트 (kbps)
-  fixed32 maxBitrateKbps = 1;
+  uint32 maxBitrateKbps = 1;
   /// 타겟 비트레이트 (kbps)
-  fixed32 targetBitrateKbps = 2;
+  uint32 targetBitrateKbps = 2;
 }
 
 /// 자동 품질 모드 (서버가 네트워크 상태에 따라 자동 조절)
@@ -113,9 +113,9 @@ message AudioCodec {
   }
 
   /// 샘플링 레이트 (Hz). 0이면 기본값 사용.
-  fixed32 sampleRate = 5;
+  uint32 sampleRate = 5;
   /// 채널 수. 0이면 기본값 사용.
-  fixed32 channelCount = 6;
+  uint32 channelCount = 6;
 
   /// 코덱별 추가 옵션 (예: "frame-size: 20ms; stream-type: voice;")
   optional string options = 15;
@@ -133,7 +133,7 @@ message SessionAudioSource {
 message ApplicationAudioSource {
   oneof identifier {
     /// 프로세스 ID
-    fixed64 pid = 1;
+    uint64 pid = 1;
     /// 앱 번들 ID (macOS)
     string bundleId = 2;
   }

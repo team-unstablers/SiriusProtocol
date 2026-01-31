@@ -58,9 +58,9 @@ constset MouseButtonType: fixed32 {
 ```protobuf
 message CursorPositionPixel {
   /// 왼쪽 위 모서리를 기준으로 한 픽셀 좌표
-  sfixed32 x = 1;
+  sint32 x = 1;
   /// 왼쪽 위 모서리를 기준으로 한 픽셀 좌표
-  sfixed32 y = 2;
+  sint32 y = 2;
 }
 ```
 
@@ -83,10 +83,10 @@ message CursorPositionScope {
     /// 한 디스플레이의 전체 영역을 기준으로 합니다.
     /// - 만약 이 필드의 값을 -1로 설정하는 경우 기본 디스플레이를 의미합니다.
     /// - 만약 이 필드의 값을 -2로 설정하는 경우 전체 화면 영역 (멀티 디스플레이 환경에서 모든 디스플레이를 포함한 영역)를 의미합니다.
-    sfixed32 displayId = 1;
+    sint32 displayId = 1;
 
     /// 특정 윈도우 ID(핸들)을 기준으로 합니다.
-    sfixed64 windowId = 2;
+    sint64 windowId = 2;
   }
 }
 ```
@@ -97,7 +97,7 @@ message CursorPositionScope {
 /// 마우스 이동 이벤트를 나타내는 메시지
 message MouseMoveEvent {
   // @constset: MouseMoveEventType
-  fixed32 moveType = 1;
+  uint32 moveType = 1;
   
   CursorPositionScope scope = 2;
 
@@ -114,10 +114,10 @@ message MouseMoveEvent {
 /// 마우스 버튼 입력 이벤트를 나타내는 메시지
 message MouseButtonEvent {
   // @constset: MouseButtonEventType
-  fixed32 eventType = 1;
+  uint32 eventType = 1;
   
   // @constset: MouseButtonType
-  fixed32 button = 2;
+  uint32 button = 2;
 }
 ```
 

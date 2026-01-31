@@ -339,25 +339,25 @@ private:
 ```protobuf
 // @opcode: 0x8001
 message FrameDataHeader {
-  fixed64 frameId = 1;
+  uint64 frameId = 1;
   // frameLength는 Protobuf 패킷 길이나 bytes 필드 길이로 대체되므로 제외 가능
   // 하지만 스트림 파싱 용도로 남겨둔다면 유지.
-  fixed32 frameLength = 2;
+  uint32 frameLength = 2;
 
   // PTS (Presentation Timestamp) - 마이크로초 단위 권장
   uint64 presentationTimestamp = 3;
 
   optional SRRect updatedRegion = 4;
-  fixed32 flags = 15;
+  uint32 flags = 15;
   // static const uint32_t FLAG_IS_KEYFRAME         = 0b00000001;
   // static const uint32_t FLAG_H264_HEVC_IS_ANNEXB = 0b;
 }
 
 message CodecParameterSet {
   // see CodecParameterSetType.hpp
-  fixed64 type = 1;
+  uint64 type = 1;
   bytes data = 2;
-  fixed32 flags = 3;
+  uint32 flags = 3;
   // static const uint32_t FLAG_H264_HEVC_IS_ANNEXB = 0x00000001;
 }
 ```

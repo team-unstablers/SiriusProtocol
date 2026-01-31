@@ -11,27 +11,27 @@ import:
 ```protobuf
 // @opcode: 0x80A1
 message SubscribeCursorEventsRequest {
-    fixed64 requestId = 1;
-    fixed32 flags = 16; // reserved
+    uint64 requestId = 1;
+    uint32 flags = 16; // reserved
 }
 
 // @opcode: 0x80A2
 message SubscribeCursorEventsResponse {
-    fixed64 requestId = 1;
+    uint64 requestId = 1;
     /// 구독 식별자.
     SRUUID subscriptionId = 2;
 }
 
 // @opcode: 0x80A3
 message UnsubscribeCursorEventsRequest {
-    fixed64 requestId = 1;
+    uint64 requestId = 1;
     /// 구독 식별자.
     SRUUID subscriptionId = 2;
 }
 
 // @opcode: 0x80A4
 message UnsubscribeCursorEventsResponse {
-    fixed64 requestId = 1;
+    uint64 requestId = 1;
     /// 구독 식별자.
     SRUUID subscriptionId = 2;
     /// 구독 해제 성공 여부.
@@ -40,7 +40,7 @@ message UnsubscribeCursorEventsResponse {
 
 // @opcode: 0x80A5
 message CursorEvent {
-    fixed64 cursorType = 1;
+    uint64 cursorType = 1;
     string mimeType = 2;
     SRSize size = 3;
     bytes imageData = 4;

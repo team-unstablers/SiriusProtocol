@@ -25,15 +25,15 @@ constset KeyboardLayoutId: uint32 {
 /// Keyboard Layout 정의
 message KeyboardLayout {
   // @constset: KeyboardLayoutId
-  fixed32 layoutId = 1;
+  uint32 layoutId = 1;
 
   // Locale ID
   // - MS-LCID를 따릅니다.
   // - (eg. 0x0409 - en-US, 0x0412 - ko-KR)
   // - see https://learn.microsoft.com/en-us/openspecs/windows_protocols/ms-lcid/70feba9f-294e-491e-b6eb-56532684c37f
-  fixed32 localeId = 2;
+  uint32 localeId = 2;
 
-  fixed32 flags = 15;
+  uint32 flags = 15;
 }
 ```
 
@@ -76,7 +76,7 @@ message KeyboardSetupEvent {
 
   // ... reserved for future use ...
 
-  fixed32 flags = 15;
+  uint32 flags = 15;
 }
 ```
 
@@ -110,14 +110,14 @@ constset KeyboardEventType: uint32 {
 ```protobuf
 message KeyboardEvent {
   // @constset: KeyboardEventType
-  fixed32 eventType = 1;
+  uint32 eventType = 1;
 
-  fixed32 scanCode = 2;
-  fixed32 keyCode = 3;
+  uint32 scanCode = 2;
+  uint32 keyCode = 3;
   
   // @optionset: KeyboardModifier
-  fixed32 modifiers = 4;
+  uint32 modifiers = 4;
 
-  fixed32 flags = 5;
+  uint32 flags = 5;
 }
 ```

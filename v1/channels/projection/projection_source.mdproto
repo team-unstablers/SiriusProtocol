@@ -43,7 +43,7 @@ message EntireDisplayProjectionSource {
   /// 디스플레이 ID.
   /// -1로 설정하는 경우 기본 디스플레이를 의미합니다.
   /// -2로 설정하는 경우 전체 디스플레이 영역을 의미합니다.
-  sfixed32 displayId = 1;
+  sint32 displayId = 1;
 }
 ```
 
@@ -55,7 +55,7 @@ message DisplayRegionProjectionSource {
   /// 디스플레이 ID.
   /// -1로 설정하는 경우 기본 디스플레이를 의미합니다.
   /// -2로 설정하는 경우 전체 디스플레이 영역을 의미합니다.
-  sfixed32 displayId = 1;
+  sint32 displayId = 1;
   
   /// 프로젝션할 사각형 영역 (픽셀 단위)
   SRRect region = 2;
@@ -68,7 +68,7 @@ message DisplayRegionProjectionSource {
 /// 단일 윈도우(창)를 프로젝션할 때 사용합니다.
 message SingleWindowProjectionSource {
   /// 프로젝션할 윈도우의 고유 ID (Handle)
-  optional sfixed64 windowId = 1;
+  optional sint64 windowId = 1;
   
   // TODO: 프로세스 ID, 윈도우 타이틀 등 추가적인 윈도우 식별 방법 추가 검토
 

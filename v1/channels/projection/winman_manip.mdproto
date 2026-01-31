@@ -40,7 +40,7 @@ constset WindowStateCommand: uint32 {
 ```protobuf
 // @opcode: 0x8081
 message WindowManipulationRequest {
-  fixed64 windowId = 1;
+  uint64 windowId = 1;
 
   oneof operation {
     /// 닫기, 최소화, 최대화, 복원 등의 간단한 오퍼레이션을 수행합니다.
@@ -60,25 +60,25 @@ message WindowManipulationRequest {
     /// 이 윈도우에 플래그를 임의로 설정합니다. (performs `window->setFlags(window->flags() | flagMask);`)
     /// @note 안전을 위해 OS / DM 자체의 플래그가 아닌, 애플리케이션 레벨에서 정의한 플래그만 설정할 수 있습니다. (see WindowInfoFlags)
     ///       또한, 서버 구현체에 따라 안전하지 않다고 판단되는 플래그는 무시될 수 있습니다.
-    fixed64 setFlags = 13;
+    uint64 setFlags = 13;
 
     /// 이 윈도우에서 플래그를 임의로 제거합니다. (performs `window->setFlags(window->flags() & ~flagMask);`)
     /// @note 안전을 위해 OS / DM 자체의 플래그가 아닌, 애플리케이션 레벨에서 정의한 플래그만 설정할 수 있습니다. (see WindowInfoFlags)
     ///       또한, 서버 구현체에 따라 안전하지 않다고 판단되는 플래그는 무시될 수 있습니다.
-    fixed64 clearFlags = 14;
+    uint64 clearFlags = 14;
   }
 
   // reserved for future use
   map<string, string> extraArgs = 15;
   // reserved for future use
-  fixed32 flags = 16;
+  uint32 flags = 16;
 }
 
 // @opcode: 0x8082
 message WindowManipulationResponse {
   bool isSuccess = 1;
 
-  fixed32 code = 2;
+  uint32 code = 2;
   optional string message = 3;
 }
 ```

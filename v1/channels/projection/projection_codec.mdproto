@@ -16,24 +16,18 @@ import:
 
 ## CodecFourCC
 
-```c++
-type sirius_fourcc_t = union {
-    char code[4];
-    @ensure_byte_order(BIG_ENDIAN)
-    uint32_t value;
-};
-
-namespace CodecFourCC {
+```constset
+constset CodecFourCC: uint32 {
   /// 'NONE' - 출력 없음 / 아무런 출력도 행하지 않습니다.
-  static const sirius_fourcc_t DISPLAY_CODEC_NONE = "NONE";
+  const none = 0x4E4F4E45;
 
   /// 'AVC1' - H.264 / AVC
-  static const sirius_fourcc_t DISPLAY_CODEC_AVC1 = "AVC1";
+  const avc1 = 0x61766331;
   /// 'HVC1' - H.265 / HEVC
-  static const sirius_fourcc_t DISPLAY_CODEC_HVC1 = "HVC1";
+  const hvc1 = 0x68766331;
 
   /// 'TURL' - RLE (team unstablers variant)
-  static const sirius_fourcc_t DISPLAY_CODEC_TURL = "TURL";
+  const turl = 0x5455524C;
 }
 ```
 
@@ -87,7 +81,7 @@ message AutoQuality {
 /// 상수 비트레이트 (CBR) 품질 설정
 message ConstantBitrateQuality {
   /// 비트레이트 (kbps)
-  sfixed32 bitrateKbps = 1;
+  int32 bitrateKbps = 1;
 }
 ```
 
@@ -97,9 +91,9 @@ message ConstantBitrateQuality {
 /// 가변 비트레이트 (VBR) 품질 설정
 message VariableBitrateQuality {
   /// 최대 비트레이트 (kbps)
-  sfixed32 maxBitrateKbps = 1;
+  int32 maxBitrateKbps = 1;
   /// 타겟 비트레이트 (kbps)
-  sfixed32 targetBitrateKbps = 2;
+  int32 targetBitrateKbps = 2;
 }
 ```
 
@@ -110,7 +104,7 @@ message VariableBitrateQuality {
 /// - 0부터 100까지의 값으로 품질을 지정합니다.
 /// - 값이 낮을수록 더 높은 품질을 나타낼 수도 있고, 반대일 수도 있으나 일반적으로 100이 최고 품질입니다. (구현체 의존적)
 message FixedQuality {
-  sfixed32 quality = 1;
+  int32 quality = 1;
 }
 ```
 

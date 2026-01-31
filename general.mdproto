@@ -81,9 +81,9 @@ enum NoticeSeverity {
 // @opcode: 0x0001
 message ServerNotice {
   NoticeSeverity severity = 1;
-  fixed32 code = 2;
+  uint32 code = 2;
   string message = 3;
-  fixed64 timestamp = 4;
+  uint64 timestamp = 4;
 }
 ```
 
@@ -99,7 +99,7 @@ message ServerNotice {
 // @opcode: 0x0002
 message ClientHello {
   // @constset: SiriusProtocolVersion
-  fixed32 protocolVersion = 1;
+  uint32 protocolVersion = 1;
   
   // TODO: optional로 설정해야 함
   string agentName = 2;
@@ -126,7 +126,7 @@ message ClientHello {
 // @opcode: 0x0003
 message ServerHello {
   // @constset: SiriusProtocolVersion
-  fixed32 protocolVersion = 1;
+  uint32 protocolVersion = 1;
 
   /// 지원하는 기능 목록
   repeated SRUUID supportedFeatures = 2;
