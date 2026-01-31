@@ -1,0 +1,55 @@
+---
+syntax: "proto3"
+package: "sirius.msgdef.v1.channels.projection"
+import:
+  - "msgdef/general.proto"
+  - "msgdef/v1/channels/projection/projection_typedef.proto"
+---
+
+# PROJECTION SOURCE
+
+```protobuf
+/// 전체 디스플레이를 프로젝션할 때 사용합니다.
+message EntireDisplayProjectionSource {
+  /// 디스플레이 ID.
+  /// -1로 설정하는 경우 기본 디스플레이를 의미합니다.
+  /// -2로 설정하는 경우 전체 디스플레이 영역을 의미합니다.
+  sfixed32 displayId = 1;
+}
+
+/// 수동으로 직접 프로젝션할 뷰포트를 지정합니다.
+message DisplayRegionProjectionSource {
+  /// 디스플레이 ID.
+  /// -1로 설정하는 경우 기본 디스플레이를 의미합니다.
+  /// -2로 설정하는 경우 전체 디스플레이 영역을 의미합니다.
+  sfixed32 displayId = 1;
+  SRRect region = 2;
+}
+
+enum SingleWindowProjectionSourceFlags {
+  SINGLE_WINDOW_PROJECTION_FLAG_NONE = 0;
+  SINGLE_WINDOW_PROJECTION_FLAG_FOLLOW_SOURCE = 1;
+}
+
+/// 단일 창을 프로젝션할 때 사용합니다.
+message SingleWindowProjectionSource {
+  optional sfixed64 windowId = 1;
+  // TODO: Add more window identification methods (e.g., by process ID, by window title, etc.)
+
+  SingleWindowProjectionSourceFlags flags = 16;
+}
+
+enum ProjectionSourceFlags {
+  DISPLAY_VIEWPORT_FLAG_NONE = 0;
+}
+
+message ProjectionSource {
+  oneof value {
+    EntireDisplayProjectionSource entireDisplay = 1;
+    DisplayRegionProjectionSource region = 2;
+    SingleWindowProjectionSource singleWindow = 3;
+  }
+
+  ProjectionSourceFlags flags = 16;
+}
+```
