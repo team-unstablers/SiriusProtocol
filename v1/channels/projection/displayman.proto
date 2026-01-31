@@ -197,7 +197,7 @@ message SubscribeDisplayChangesRequest {
 message SubscribeDisplayChangesResponse {
   fixed64 requestId = 1;
   /// 구독 식별자.
-  UUID subscriptionId = 2;
+  SRUUID subscriptionId = 2;
 }
 
 /// 서버로부터 디스플레이 변경 이벤트를 구독 해제합니다.
@@ -205,7 +205,7 @@ message SubscribeDisplayChangesResponse {
 message UnsubscribeDisplayChangesRequest {
   fixed64 requestId = 1;
   /// 구독 식별자.
-  UUID subscriptionId = 2;
+  SRUUID subscriptionId = 2;
 }
 
 /// UnsubscribeDisplayChangesRequest에 대한 응답 메시지.
@@ -213,7 +213,7 @@ message UnsubscribeDisplayChangesRequest {
 message UnsubscribeDisplayChangesResponse {
   fixed64 requestId = 1;
   /// 구독 식별자.
-  UUID subscriptionId = 2;
+  SRUUID subscriptionId = 2;
   /// 구독 해제 성공 여부.
   bool isSuccess = 3;
 }

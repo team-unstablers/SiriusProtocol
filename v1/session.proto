@@ -28,5 +28,5 @@ message AuthRequest {
 
 /// opcode = 0x0013
 message AuthResponse {
-  UUID sessionId = 1;
+  SRUUID sessionId = 1;
 }

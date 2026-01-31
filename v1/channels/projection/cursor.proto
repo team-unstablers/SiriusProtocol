@@ -16,21 +16,21 @@ message SubscribeCursorEventsRequest {
 message SubscribeCursorEventsResponse {
     fixed64 requestId = 1;
     /// 구독 식별자.
-    UUID subscriptionId = 2;
+    SRUUID subscriptionId = 2;
 }
 
 // opcode = 0x80A3
 message UnsubscribeCursorEventsRequest {
     fixed64 requestId = 1;
     /// 구독 식별자.
-    UUID subscriptionId = 2;
+    SRUUID subscriptionId = 2;
 }
 
 // opcode = 0x80A4
 message UnsubscribeCursorEventsResponse {
     fixed64 requestId = 1;
     /// 구독 식별자.
-    UUID subscriptionId = 2;
+    SRUUID subscriptionId = 2;
     /// 구독 해제 성공 여부.
     bool isSuccess = 3;
 }

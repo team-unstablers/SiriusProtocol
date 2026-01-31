@@ -127,7 +127,7 @@ enum AudioSessionEndReason {
 /// 오디오 스트림의 프로젝션을 요청합니다.
 // opcode = 0x80C1
 message AudioProjectionRequest {
-  sirius.msgdef.UUID identifier = 1;
+  SRUUID identifier = 1;
 
   /// 프로젝션할 오디오 소스
   AudioSource source = 2;
@@ -138,7 +138,7 @@ message AudioProjectionRequest {
 /// 오디오 프로젝션 중지를 요청합니다.
 // opcode = 0x80C2
 message StopAudioProjectionRequest {
-  sirius.msgdef.UUID identifier = 1;
+  SRUUID identifier = 1;
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -148,7 +148,7 @@ message StopAudioProjectionRequest {
 /// 오디오 세션이 성공적으로 생성되었을 때 발생하는 이벤트
 // opcode = 0x80C3
 message AudioSessionCreatedEvent {
-  sirius.msgdef.UUID identifier = 1;
+  SRUUID identifier = 1;
   AudioSource source = 2;
   AudioCodec codec = 3;
 }
@@ -156,7 +156,7 @@ message AudioSessionCreatedEvent {
 /// 오디오 세션 생성이 실패했을 때 발생하는 이벤트
 // opcode = 0x80C4
 message AudioSessionCreationFailedEvent {
-  sirius.msgdef.UUID identifier = 1;
+  SRUUID identifier = 1;
   AudioSessionFailureReason reason = 2;
   optional string message = 3;
 }
@@ -164,7 +164,7 @@ message AudioSessionCreationFailedEvent {
 /// 오디오 세션 설정이 변경되었을 때 발생하는 이벤트
 // opcode = 0x80C5
 message AudioSessionChangedEvent {
-  sirius.msgdef.UUID identifier = 1;
+  SRUUID identifier = 1;
   AudioSessionChangeReason reason = 2;
   optional AudioSource source = 3;
   optional AudioCodec codec = 4;
@@ -173,7 +173,7 @@ message AudioSessionChangedEvent {
 /// 오디오 세션이 종료되었을 때 발생하는 이벤트
 // opcode = 0x80C6
 message AudioSessionEndedEvent {
-  sirius.msgdef.UUID identifier = 1;
+  SRUUID identifier = 1;
   AudioSessionEndReason reason = 2;
   optional string message = 3;
 }

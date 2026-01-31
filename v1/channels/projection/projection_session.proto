@@ -9,7 +9,7 @@ import "msgdef/v1/channels/projection/projection_source.proto";
 
 // opcode = 0x8001
 message ProjectionRequest {
-  sirius.msgdef.UUID identifier = 1;
+  SRUUID identifier = 1;
 
   ProjectionSource viewport = 2;
   repeated Codec preferredCodecs = 3;
@@ -17,7 +17,7 @@ message ProjectionRequest {
 
 // opcode = 0x8002
 message StopProjectionRequest {
-  sirius.msgdef.UUID identifier = 1;
+  SRUUID identifier = 1;
 }
 
 /*
@@ -32,7 +32,7 @@ message StopProjectionRequest {
 // opcode = 0x8003
 message ProjectionPerformanceReport {
   /// 프로젝션 세션 식별자
-  sirius.msgdef.UUID identifier = 1;
+  SRUUID identifier = 1;
 
   /// 인터벌동안 수신된 프레임 수
   fixed32 receivedFrameCount = 2;
@@ -47,7 +47,7 @@ message ProjectionPerformanceReport {
 
 // opcode = 0x8021
 message ProjectionSessionCreatedEvent {
-  sirius.msgdef.UUID identifier = 1;
+  SRUUID identifier = 1;
 
   ProjectionSource source = 2;
   Codec codec = 3;
@@ -55,7 +55,7 @@ message ProjectionSessionCreatedEvent {
 
 // opcode = 0x8022
 message ProjectionSessionCreationFailedEvent {
-  sirius.msgdef.UUID identifier = 1;
+  SRUUID identifier = 1;
   sfixed32 reason = 2;
 
   optional string message = 3;
@@ -63,7 +63,7 @@ message ProjectionSessionCreationFailedEvent {
 
 // opcode = 0x8023
 message ProjectionSessionChangedEvent {
-  sirius.msgdef.UUID identifier = 1;
+  SRUUID identifier = 1;
   sfixed32 reason = 2;
 
   ProjectionSource source = 3;
@@ -72,7 +72,7 @@ message ProjectionSessionChangedEvent {
 
 // opcode = 0x8024
 message ProjectionSessionEndedEvent {
-  sirius.msgdef.UUID identifier = 1;
+  SRUUID identifier = 1;
   sfixed32 reason = 2;
 
   optional string message = 3;

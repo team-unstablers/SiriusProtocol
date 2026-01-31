@@ -26,8 +26,8 @@ import "msgdef/general.proto";
 
 /// opcode = 0x0021
 message ChannelStartRequest {
-  sirius.msgdef.UUID featureId = 1;
-  sirius.msgdef.UUID channelId = 2;
+  SRUUID featureId = 1;
+  SRUUID channelId = 2;
   repeated string args = 3;
 }
 
