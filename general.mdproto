@@ -47,6 +47,30 @@ constset SiriusProtocolVersion: uint32 {
 - Sirius 프로토콜의 버전을 나타내는 상수 집합입니다.
 - 현재 액티브하게 사용되는 버전은 `v1_0_draft`입니다.
 
+## ClosureCode
+
+```constset
+constset ClosureCode: uint32 {
+    /// 정상적으로 세션이 종료되었습니다.
+    const successful = 0; 
+    
+    /// 프로토콜 오류로 인해 세션이 종료되었습니다.
+    /// 부정한 메시지를 수신하였거나, 프로토콜 규격을 준수하지 않은 경우에 발생합니다.
+    /// 필요한 경우, message 필드를 통해 추가적인 정보를 제공할 수 있습니다.
+    const protocolError = 1;
+    
+    /// 서버 내부 오류로 인해 세션이 종료되었습니다.
+    const internalServerError = 2;
+
+    /// 인증에 실패하여 세션이 종료되었습니다.
+    const authenticationFailed = 3;
+    
+    /// 세션 시트를 마련하는데 실패하였습니다.
+    /// 보통 이 오류는 서버의 자원 부족 / 최대 연결 수 초과 등의 이유로 발생합니다.
+    const sessionAllocationFailed = 4;
+}
+```
+
 ---
 
 # ENUM TYPES
@@ -144,4 +168,24 @@ message ServerHello {
 - `supportedFeatures` 필드는 서버가 지원하는 기능들의 UUID 목록을 포함합니다.
 - `serverName`과 `motd` 필드는 서버 정책에 따라 생략될 수 있습니다.
 
+---
 
+## Goodbye
+
+```protobuf
+
+/// Graceful한 접속 종료 메시지.
+/// 서버에서도, 클라이언트에서도 전송할 수 있습니다.
+// @opcode: 0x0004
+message Goodbye {
+    // @constset: ClosureCode 
+    uint32 code = 1;
+    optional string message = 2;
+}
+```
+
+### DESCRIPTION
+
+- 클라이언트 또는 서버가 접속을 종료할 때 보내는 메시지입니다.
+- `code`는 종료 사유를 나타내는 숫자 코드이며, `message`는 선택적으로 추가적인 설명을 담을 수 있습니다.
+- 이 메시지를 받은 쪽은 즉시 연결을 종료해야 합니다.
