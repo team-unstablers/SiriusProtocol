@@ -16,7 +16,7 @@ import:
 ## MouseMoveEventType
 
 ```constset
-constset MouseMoveEventType: fixed32 {
+constset MouseMoveEventType: uint32 {
   /// 절대 좌표 이동 (화면의 특정 위치로 커서 이동)
   const absolute = 0;
   
@@ -28,7 +28,7 @@ constset MouseMoveEventType: fixed32 {
 ## MouseButtonEventType
 
 ```constset
-constset MouseButtonEventType: fixed32 {
+constset MouseButtonEventType: uint32 {
   /// 마우스 버튼 눌림
   const down = 0;
   
@@ -40,7 +40,7 @@ constset MouseButtonEventType: fixed32 {
 ## MouseButtonType
 
 ```constset
-constset MouseButtonType: fixed32 {
+constset MouseButtonType: uint32 {
   const left = 0;
   const right = 1;
   const middle = 2;
