@@ -1,0 +1,25 @@
+---
+syntax: "proto3"
+package: "sirius.msgdef"
+---
+
+# COMMON TYPES FOR SIRIUS PROTOCOLS
+
+## SRUUID
+
+```protobuf
+message SRUUID {
+  /// 16 bytes UUID value
+  bytes value = 1;
+}
+```
+
+### DESCRIPTION
+
+- `sirius.msgdef.SRUUID`는 UUID를 담기 위한 컨테이너 스트럭트입니다.
+  - `value` 필드는 16바이트 길이의 UUID 값을 담습니다.
+
+### IMPLEMENTATION NOTES
+
+- **모든 Sirius 프로토콜 구현체**는 UUID 데이터가 16바이트 길이임을 보장하고, 항상 체크해야 합니다.
+  - 16바이트가 아닌 UUID 값은 잘못된 것으로 간주되어야 하고, 처리를 거부해야 합니다.

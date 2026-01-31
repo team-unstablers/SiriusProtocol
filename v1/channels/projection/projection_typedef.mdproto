@@ -1,11 +1,11 @@
-syntax = "proto3";
+---
+syntax: "proto3"
+package: "sirius.msgdef.v1.channels.projection"
+import:
+  - "msgdef/common-types.proto"
+---
 
-package sirius.msgdef.v1.channels.projection;
-
-import "msgdef/general.proto";
-
-/*
-# Projection: Typedefs
+# PROJECTION TYPEDEFS
 
 ## SRRect
 - SRRect 메시지는 사각형 영역을 정의하는 데 사용됩니다.
@@ -17,34 +17,34 @@ import "msgdef/general.proto";
   - (0, 0)은 왼쪽 위 모서리를 의미합니다.
   - x 값이 증가할수록 오른쪽으로 이동합니다.
   - y 값이 증가할수록 아래쪽으로 이동합니다.
- */
 
+```protobuf
 message SRRect {
   double x = 1;
   double y = 2;
   double width = 3;
   double height = 4;
 }
+```
 
-/*
 ## SRPoint
 - SRPoint 메시지는 2D 공간에서의 점을 정의하는 데 사용됩니다.
 - x, y 필드는 점의 좌표를 나타냅니다.
- */
 
+```protobuf
 message SRPoint {
   double x = 1;
   double y = 2;
 }
+```
 
-/*
 ## SRSize
 - SRSize 메시지는 2D 공간에서의 크기를 정의하는 데 사용됩니다.
 - x 필드는 너비를 나타내고, y 필드는 높이를 나타냅니다
- */
+
+```protobuf
 message SRSize {
   double x = 1;
   double y = 2;
 }
-
-
+```

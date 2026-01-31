@@ -1,10 +1,10 @@
-syntax = "proto3";
+---
+syntax: "proto3"
+package: "sirius.msgdef.v1"
+import:
+  - "msgdef/common-types.proto"
+---
 
-package sirius.msgdef.v1;
-
-import "msgdef/general.proto";
-
-/*
 # ABOUT CHANNELS
 
 - 채널은 서버와 클라이언트 간의 다중화된 통신 경로를 제공합니다.
@@ -22,37 +22,38 @@ import "msgdef/general.proto";
 - 새 스트림이 성공적으로 열리면, 새로 열린 스트림을 통해 채널 오픈을 알리는 메시지를 상대방에게 보냅니다.
 
 - *NOTE*: 메인 채널 (연결 수립 직후 열리는 스트림)은 별도의 채널 오픈 절차 없이 사용되어야 합니다.
- */
 
-/// opcode = 0x0021
+```protobuf
+// @opcode: 0x0021
 message ChannelStartRequest {
-  sirius.msgdef.UUID featureId = 1;
-  sirius.msgdef.UUID channelId = 2;
+  SRUUID featureId = 1;
+  SRUUID channelId = 2;
   repeated string args = 3;
 }
+```
 
-/*
 ## 2. Channel Open Response
 - 채널 오픈 요청을 받은 쪽은 요청을 처리하고, 채널 오픈 응답 메시지를 보냅니다.
 - 응답 메시지에는 채널 오픈의 성공 여부와, 실패 시 이유를 포함할 수 있습니다.
- */
 
-/// opcode = 0x0022
+```protobuf
+// @opcode: 0x0022
 message ChannelStartResponse {
   bool success = 1;
   // TODO: reason, error code?
 }
+```
 
-/*
 ## 3. Closing a Channel
 - 채널을 닫기 위해, 서버/클라이언트는 채널 닫기 요청 메시지를 상대방에게 보냅니다.
- */
-/// opcode = 0x0023
+
+```protobuf
+// @opcode: 0x0023
 message ChannelCloseRequest {
   // TODO: reason
 }
+```
 
-/*
 # NOTE
 
 - feature에 따라 채널 관리 정책이 있을 수 있습니다.
@@ -63,4 +64,3 @@ message ChannelCloseRequest {
 
 - feature에 따라 채널 오픈 이후에는 Sirius가 아닌 전혀 다른 프로토콜로 Upgrade 될 수도 있습니다.
   - 이 경우, Sirius는 채널 오픈 이후 데이터 전송에 관여하지 않습니다.
- */

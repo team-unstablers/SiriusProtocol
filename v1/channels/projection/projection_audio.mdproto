@@ -1,0 +1,223 @@
+---
+syntax: "proto3"
+package: "sirius.msgdef.v1.channels.projection"
+import:
+  - "msgdef/common-types.proto"
+---
+
+# PROJECTION AUDIO MESSAGES
+
+오디오 프로젝션(오디오 전송 및 제어)을 위한 메시지 정의입니다.
+비디오 프로젝션과 유사한 세션 모델을 따르며, 다양한 오디오 소스와 코덱 설정을 지원합니다.
+
+---
+
+# CONSTANTS
+
+## AudioFourCC
+
+```constset
+constset AudioFourCC: uint32 {
+    /// Opus Audio Codec
+    const opus = 0x4F505553;
+    
+    /// G.711 mu-law
+    const pcmu = 0x50434D55;
+    
+    /// G.711 A-law
+    const pcma = 0x50434D41;
+}
+```
+
+## AudioSessionFailureReason
+
+```constset
+constset AudioSessionFailureReason: uint32 {
+  const unknown = 0;
+  /// 요청한 오디오 소스를 찾을 수 없음
+  const sourceNotFound = 1;
+  /// 지원하지 않는 오디오 코덱임
+  const codecNotSupported = 2;
+  /// 오디오 캡쳐 권한이 거부됨
+  const permissionDenied = 3;
+}
+```
+
+## AudioSessionChangeReason
+
+```constset
+constset AudioSessionChangeReason: uint32 {
+  const unknown = 0;
+  /// 오디오 소스가 변경됨
+  const sourceChanged = 1;
+  /// 코덱 설정이 재협상됨
+  const codecRenegotiated = 2;
+}
+```
+
+## AudioSessionEndReason
+
+```constset
+constset AudioSessionEndReason: uint32 {
+  const unknown = 0;
+  /// 클라이언트의 요청으로 종료됨
+  const clientRequested = 1;
+  /// 오디오 소스를 더 이상 사용할 수 없음
+  const sourceUnavailable = 2;
+  /// 오류로 인해 종료됨
+  const error = 3;
+}
+```
+
+---
+
+# MESSAGE DEFINITIONS
+
+## Audio Codec Quality Types
+
+```protobuf
+/// CBR (Constant Bit Rate) 모드 설정
+message AudioConstantBitrateQuality {
+  /// 고정 비트레이트 (kbps)
+  uint32 bitrateKbps = 1;
+}
+
+/// VBR (Variable Bit Rate) 모드 설정
+message AudioVariableBitrateQuality {
+  /// 최대 비트레이트 (kbps)
+  uint32 maxBitrateKbps = 1;
+  /// 타겟 비트레이트 (kbps)
+  uint32 targetBitrateKbps = 2;
+}
+
+/// 자동 품질 모드 (서버가 네트워크 상태에 따라 자동 조절)
+message AudioAutoQuality {
+  // 추후 확장을 위해 예약
+}
+```
+
+## AudioCodec
+
+```protobuf
+/// 오디오 코덱 및 품질 설정
+message AudioCodec {
+  /// 코덱 식별을 위한 FourCC 코드
+  // @constset: AudioFourCC
+  fixed32 fourCC = 1;
+
+  /// 품질 설정 모드
+  oneof quality {
+    AudioConstantBitrateQuality constantBitrate = 2;
+    AudioVariableBitrateQuality variableBitrate = 3;
+    AudioAutoQuality auto = 4;
+  }
+
+  /// 샘플링 레이트 (Hz). 0이면 기본값 사용.
+  uint32 sampleRate = 5;
+  /// 채널 수. 0이면 기본값 사용.
+  uint32 channelCount = 6;
+
+  /// 코덱별 추가 옵션 (예: "frame-size: 20ms; stream-type: voice;")
+  optional string options = 15;
+}
+```
+
+## Audio Source Types
+
+```protobuf
+/// 세션 전역 오디오 루프백 소스
+message SessionAudioSource {
+}
+
+/// 특정 애플리케이션의 오디오 소스
+message ApplicationAudioSource {
+  oneof identifier {
+    /// 프로세스 ID
+    uint64 pid = 1;
+    /// 앱 번들 ID (macOS)
+    string bundleId = 2;
+  }
+}
+
+/// 마이크 입력 소스
+message MicrophoneAudioSource {
+  /// 특정 마이크 장치 ID (비어있으면 기본 장치 사용)
+  optional string deviceId = 1;
+}
+
+/// 오디오 프로젝션 소스 정의
+message AudioSource {
+  oneof value {
+    SessionAudioSource sessionAudio = 1;        // 전체 시스템 오디오
+    ApplicationAudioSource applicationAudio = 2; // 특정 앱 오디오
+    MicrophoneAudioSource microphone = 3;       // 마이크 입력
+  }
+}
+```
+
+## Audio Projection Request Messages
+
+```protobuf
+/// 오디오 프로젝션 시작을 요청합니다.
+// @opcode: 0x80C1
+message AudioProjectionRequest {
+  /// 세션 식별자
+  SRUUID identifier = 1;
+
+  /// 프로젝션할 오디오 소스
+  AudioSource source = 2;
+  /// 선호하는 코덱 목록 (우선순위 순)
+  repeated AudioCodec preferredCodecs = 3;
+}
+
+/// 오디오 프로젝션 중지를 요청합니다.
+// @opcode: 0x80C2
+message StopAudioProjectionRequest {
+  /// 중지할 세션 식별자
+  SRUUID identifier = 1;
+}
+```
+
+## Audio Session Event Messages
+
+```protobuf
+/// 오디오 세션이 성공적으로 생성되었을 때 발생하는 이벤트
+// @opcode: 0x80C3
+message AudioSessionCreatedEvent {
+  SRUUID identifier = 1;
+  AudioSource source = 2;
+  AudioCodec codec = 3;
+}
+
+/// 오디오 세션 생성이 실패했을 때 발생하는 이벤트
+// @opcode: 0x80C4
+message AudioSessionCreationFailedEvent {
+  SRUUID identifier = 1;
+  /// 실패 사유
+  // @constset: AudioSessionFailureReason
+  uint32 reason = 2;
+  /// 상세 오류 메시지
+  optional string message = 3;
+}
+
+/// 오디오 세션 설정이 변경되었을 때 발생하는 이벤트
+// @opcode: 0x80C5
+message AudioSessionChangedEvent {
+  SRUUID identifier = 1;
+  /// 변경 사유
+  // @constset: AudioSessionChangeReason
+  uint32 reason = 2;
+  optional AudioSource source = 3;
+  optional AudioCodec codec = 4;
+}
+
+/// 오디오 세션이 종료되었을 때 발생하는 이벤트
+// @opcode: 0x80C6
+message AudioSessionEndedEvent {
+  SRUUID identifier = 1;
+  /// 종료 사유
+  // @constset: AudioSessionEndReason
+  uint32 reason = 2;
+  optional string message = 3;
+}
+```

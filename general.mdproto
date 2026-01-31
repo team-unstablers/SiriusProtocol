@@ -1,0 +1,191 @@
+---
+syntax: "proto3"
+package: "sirius.msgdef"
+import:
+  - "msgdef/common-types.proto"
+---
+
+# GENERAL MESSAGE DEFINITIONS
+
+- 이 파일에는 Sirius 프로토콜 / 메인 채널에서 사용되는 일반 메시지 정의가 포함되어 있습니다.
+- 기능별 메시지 정의는 각 기능의 msgdef 파일에 별도로 정의되어 있습니다.
+
+# MESSAGE OPCODES
+- 모든 Sirius 프로토콜 메시지에는 고유한 opcode가 할당되어 있습니다.
+- opcode는 2바이트 고정 길이 필드로, 각 메시지의 시작 부분에 위치합니다.
+- opcode는 Big-Endian 형식으로 인코딩됩니다.
+
+# FRAMING
+- 모든 Sirius 프로토콜 메시지는 다음과 같은 프레이밍 구조를 가집니다:
+  - 2 bytes: opcode (Big-Endian)
+  - 4 bytes: message length (Big-Endian, excluding opcode and length fields)
+  - N bytes: message payload (Protobuf serialized data)
+
+- 예를 들어, opcode가 0x0001이고, 메시지 길이가 10바이트인 메시지는 다음과 같이 인코딩됩니다:
+  - 00 01 (opcode)
+  - 00 00 00 0A (length = 10)
+  - [10 bytes of Protobuf serialized data] (payload)
+
+---
+
+# CONSTANTS
+
+## SiriusProtocolVersion
+
+```constset
+constset SiriusProtocolVersion: uint32 {
+    /// v1.0 (draft version)
+    const v1_0_draft = 0x0000FFFF; 
+    
+    /// version 1.0 (아직 쓰지 않음)
+    const v1_0 = 0x00010000; 
+}
+```
+
+### DESCRIPTION
+
+- Sirius 프로토콜의 버전을 나타내는 상수 집합입니다.
+- 현재 액티브하게 사용되는 버전은 `v1_0_draft`입니다.
+
+## ClosureCode
+
+```constset
+constset ClosureCode: uint32 {
+    /// 정상적으로 세션이 종료되었습니다.
+    const successful = 0; 
+    
+    /// 프로토콜 오류로 인해 세션이 종료되었습니다.
+    /// 부정한 메시지를 수신하였거나, 프로토콜 규격을 준수하지 않은 경우에 발생합니다.
+    /// 필요한 경우, message 필드를 통해 추가적인 정보를 제공할 수 있습니다.
+    const protocolError = 1;
+    
+    /// 서버 내부 오류로 인해 세션이 종료되었습니다.
+    const internalServerError = 2;
+
+    /// 인증에 실패하여 세션이 종료되었습니다.
+    const authenticationFailed = 3;
+    
+    /// 세션 시트를 마련하는데 실패하였습니다.
+    /// 보통 이 오류는 서버의 자원 부족 / 최대 연결 수 초과 등의 이유로 발생합니다.
+    const sessionAllocationFailed = 4;
+}
+```
+
+---
+
+# ENUM TYPES
+
+## NoticeSeverity
+
+```protobuf
+enum NoticeSeverity {
+  INFO = 0;
+  WARNING = 1;
+  ERROR = 2;
+  FATAL = 3;
+}
+```
+
+### DESCRIPTION
+
+- 서버 공지 메시지의 심각도 수준을 나타냅니다.
+- 각 심각도 수준은 다음과 같습니다:
+  - `INFO`: 일반 정보 메시지
+  - `WARNING`: 경고 메시지, 주의가 필요함
+  - `ERROR`: 오류 메시지, 문제가 발생했음을 나타냄
+  - `FATAL`: 치명적인 오류 메시지, 더 이상 진행할 수 없음
+
+---
+
+# MESSAGE DEFINITIONS
+
+## ServerNotice
+
+```protobuf
+// @opcode: 0x0001
+message ServerNotice {
+  NoticeSeverity severity = 1;
+  uint32 code = 2;
+  string message = 3;
+  uint64 timestamp = 4;
+}
+```
+
+### DESCRIPTION
+
+- 서버가 클라이언트에게 안내 사항을 전달할 때 사용하는 메시지입니다.
+
+---
+
+## ClientHello
+
+```protobuf
+// @opcode: 0x0002
+message ClientHello {
+  // @constset: SiriusProtocolVersion
+  uint32 protocolVersion = 1;
+  
+  // TODO: optional로 설정해야 함
+  string agentName = 2;
+}
+```
+
+### DESCRIPTION
+
+- 클라이언트가 서버에 접속할 때 보내는 초기 핸드쉐이크 메시지입니다.
+- 서버는 이 메시지를 수신한 후 `ServerHello` 메시지로 응답합니다.
+- `protocolVersion` 필드를 통해 클라이언트가 지원하는 프로토콜 버전을 서버에 알립니다.
+
+### IMPLEMENTATION NOTES
+
+- **서버 구현체**는 `protocolVersion`을 확인하여 호환되는 버전인지 검증해야 합니다.
+  만약 호환되지 않는 버전이라면, 적절한 오류 메시지를 반환하고 연결을 종료해야 합니다.
+
+---
+  
+## ServerHello
+
+```protobuf
+/// 서버가 클라이언트의 접속 요청에 응답할 때 보내는 메시지
+// @opcode: 0x0003
+message ServerHello {
+  // @constset: SiriusProtocolVersion
+  uint32 protocolVersion = 1;
+
+  /// 지원하는 기능 목록
+  repeated SRUUID supportedFeatures = 2;
+
+  /// 서버 정책에 따라 생략될 수 있음
+  optional string serverName = 3;
+  /// 서버 정책에 따라 생략될 수 있음
+  optional string motd = 4;
+}
+```
+
+### DESCRIPTION
+- 서버가 클라이언트의 접속 요청에 응답할 때 보내는 메시지입니다.
+- `protocolVersion` 필드를 통해 서버가 지원하는 프로토콜 버전을 클라이언트에 알립니다.
+- `supportedFeatures` 필드는 서버가 지원하는 기능들의 UUID 목록을 포함합니다.
+- `serverName`과 `motd` 필드는 서버 정책에 따라 생략될 수 있습니다.
+
+---
+
+## Goodbye
+
+```protobuf
+
+/// Graceful한 접속 종료 메시지.
+/// 서버에서도, 클라이언트에서도 전송할 수 있습니다.
+// @opcode: 0x0004
+message Goodbye {
+    // @constset: ClosureCode 
+    uint32 code = 1;
+    optional string message = 2;
+}
+```
+
+### DESCRIPTION
+
+- 클라이언트 또는 서버가 접속을 종료할 때 보내는 메시지입니다.
+- `code`는 종료 사유를 나타내는 숫자 코드이며, `message`는 선택적으로 추가적인 설명을 담을 수 있습니다.
+- 이 메시지를 받은 쪽은 즉시 연결을 종료해야 합니다.

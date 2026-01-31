@@ -1,0 +1,27 @@
+---
+syntax: "proto3"
+package: "sirius.msgdef.v1.channels.clipboard"
+import:
+  - "msgdef/common-types.proto"
+---
+
+# CLIPBOARD CHANNEL
+
+클립보드 동기화를 위한 채널 및 메시지 정의입니다.
+
+```protobuf
+message ClipboardData {
+  string contentType = 1;
+  uint64 size = 2;
+
+  /// 2KB 이하의 데이터는 여기에 포함될 수 있습니다.
+  // TODO: 대용량 데이터 전송 방법 정의
+  optional bytes data = 3;
+}
+
+// @opcode: 0x8001
+message ClipboardEvent {
+  uint64 timestamp = 1;
+  ClipboardData data = 2;
+}
+```

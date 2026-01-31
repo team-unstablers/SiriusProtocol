@@ -1,0 +1,154 @@
+---
+syntax: "proto3"
+package: "sirius.msgdef.v1.channels.projection"
+import:
+  - "msgdef/common-types.proto"
+  - "msgdef/v1/channels/projection/projection_typedef.proto"
+---
+
+# PROJECTION CODEC DEFINITIONS
+
+비디오 프로젝션을 위한 코덱 및 품질 설정 정의입니다.
+
+---
+
+# CONSTANTS
+
+## CodecFourCC
+
+```constset
+constset CodecFourCC: uint32 {
+  /// 'NONE' - 출력 없음 / 아무런 출력도 행하지 않습니다.
+  const none = 0x4E4F4E45;
+
+  /// 'AVC1' - H.264 / AVC
+  const avc1 = 0x61766331;
+  /// 'HVC1' - H.265 / HEVC
+  const hvc1 = 0x68766331;
+
+  /// 'TURL' - RLE (team unstablers variant)
+  const turl = 0x5455524C;
+}
+```
+
+## AutoQualityMode
+
+```constset
+constset AutoQualityMode: uint32 {
+  /// 품질과 성능 간의 균형을 맞춥니다.
+  const balancedPriority = 0;
+
+  /// 가능한 최고의 품질을 우선시합니다.
+  const qualityPriority = 1;
+  
+  /// 가능한 최고의 성능을 우선시합니다.
+  const performancePriority = 2;
+}
+```
+
+## LosslessQualityMode
+
+```constset
+constset LosslessQualityMode: uint32 {
+  /// 성능과 압축률 간의 균형을 맞춥니다.
+  const balancedPriority = 0;
+
+  /// 성능을 우선시합니다. (압축률이 낮아질 수 있음)
+  const speedPriority = 1;
+  
+  /// 압축률을 우선시합니다. (성능이 낮아질 수 있음)
+  const compressionPriority = 2;
+}
+```
+
+---
+
+# MESSAGE DEFINITIONS
+
+## AutoQuality
+
+```protobuf
+/// 자동 품질 모드 (서버가 네트워크 상태에 따라 자동 조절)
+message AutoQuality {
+  // @constset: AutoQualityMode
+  uint32 mode = 1;
+}
+```
+
+## ConstantBitrateQuality
+
+```protobuf
+/// 상수 비트레이트 (CBR) 품질 설정
+message ConstantBitrateQuality {
+  /// 비트레이트 (kbps)
+  int32 bitrateKbps = 1;
+}
+```
+
+## VariableBitrateQuality
+
+```protobuf
+/// 가변 비트레이트 (VBR) 품질 설정
+message VariableBitrateQuality {
+  /// 최대 비트레이트 (kbps)
+  int32 maxBitrateKbps = 1;
+  /// 타겟 비트레이트 (kbps)
+  int32 targetBitrateKbps = 2;
+}
+```
+
+## FixedQuality
+
+```protobuf
+/// 고정 품질 (CQP/CRF) 설정
+/// - 0부터 100까지의 값으로 품질을 지정합니다.
+/// - 값이 낮을수록 더 높은 품질을 나타낼 수도 있고, 반대일 수도 있으나 일반적으로 100이 최고 품질입니다. (구현체 의존적)
+message FixedQuality {
+  int32 quality = 1;
+}
+```
+
+## LosslessQuality
+
+```protobuf
+/// 무손실 품질 설정
+/// - 무손실 압축을 사용하여 품질 저하 없이 데이터를 전송합니다.
+message LosslessQuality {
+  // @constset: LosslessQualityMode
+  uint32 mode = 1;
+}
+```
+
+## Codec
+
+```protobuf
+/// 비디오 코덱 설정 메시지
+message Codec {
+  /// FourCC 코드값 (Big-Endian)
+  // @constset: CodecFourCC
+  fixed32 fourCC = 1;
+
+  /// 코덱 품질 설정
+  oneof quality {
+    ConstantBitrateQuality constantBitrate = 2;
+    VariableBitrateQuality variableBitrate = 3;
+    FixedQuality fixedQuality = 4;
+    LosslessQuality lossless = 5;
+    AutoQuality auto = 6;
+  }
+
+  /// 초당 프레임 수. 값을 -1로 설정하는 경우 소스 (모니터)의 프레임레이트를 따릅니다.
+  optional float frameRate = 9;
+
+  /// 해상도
+  SRSize size = 10;
+
+  /// 코덱별 추가 옵션 문자열 (예: "color-format: 'YUV444'; hardware-acceleration: 'true'; profile: 'high';")
+  optional string options = 15;
+}
+```
+
+# IMPLEMENTATION NOTES
+- `fourCC` 필드는 반드시 빅 엔디안 바이트 오더로 인코딩되어야 합니다.
+- `ConstantBitrateQuality`, `VariableBitrateQuality`를 제외한 나머지는 optional한 구현 사항입니다.
+  (서버 / 클라이언트 구현체가 해당 품질 설정을 지원하지 않을 수 있습니다.)

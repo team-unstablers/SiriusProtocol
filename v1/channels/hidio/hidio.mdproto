@@ -1,30 +1,27 @@
-syntax = "proto3";
+---
+syntax: "proto3"
+package: "sirius.msgdef.v1.channels.hidio"
+import:
+  - "msgdef/common-types.proto"
+  - "msgdef/v1/channels/hidio/hid_keyboard.proto"
+  - "msgdef/v1/channels/hidio/hid_mouse.proto"
+  - "msgdef/v1/channels/hidio/hid_raw.proto"
+---
 
-package sirius.msgdef.v1.channels.hidio;
-
-import "msgdef/general.proto";
-
-import "msgdef/v1/channels/hidio/hid_keyboard.proto";
-import "msgdef/v1/channels/hidio/hid_mouse.proto";
-import "msgdef/v1/channels/hidio/hid_raw.proto";
-
-/*
 # HIDIO CHANNEL
+
 - HIDIO 채널은 HID (Human Interface Device) 입력 이벤트를 전송하는 데 사용됩니다.
 - 이 채널은 키보드, 마우스 등의 입력 장치에서 발생하는 이벤트를 캡처하고, 이를 원격 시스템으로 전송하는 기능을 제공합니다.
- */
 
-
-/*
 ## HIDIOMessage
 - HIDIOMessage 메시지는 다양한 HID 이벤트를 담을 수 있는 컨테이너 메시지입니다.
 - sequenceNumber 필드는 메시지의 순서를 나타내며, timestamp 필드는 이벤트가 발생한 시간을 나타냅니다.
- */
 
-// opcode = 0x8001
+```protobuf
+// @opcode: 0x8001
 message HIDIOPacket {
-  fixed64 sequenceNumber = 1;
-  fixed64 timestamp = 2;
+  uint64 sequenceNumber = 1;
+  uint64 timestamp = 2;
 
   // 애플리케이션에서는 가능한 한 여러 이벤트를 하나의 패킷에 묶어서 전송하는 것이 좋습니다.
   repeated HIDEvent events = 3;
@@ -43,3 +40,4 @@ message HIDEvent {
     MouseWheelEvent mouseWheelEvent = 8;
   }
 }
+```
