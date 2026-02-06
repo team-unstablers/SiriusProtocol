@@ -18,16 +18,20 @@ import:
 
 ```constset
 constset CodecFourCC: uint32 {
-  /// 'NONE' - 출력 없음 / 아무런 출력도 행하지 않습니다.
-  const none = 0x4E4F4E45;
-
-  /// 'AVC1' - H.264 / AVC
-  const avc1 = 0x61766331;
-  /// 'HVC1' - H.265 / HEVC
-  const hvc1 = 0x68766331;
-
-  /// 'TURL' - RLE (team unstablers variant)
-  const turl = 0x5455524C;
+  /// 'AVC1': Advanced Video Coding (H.264), MPEG-4 Part 10
+  const avc1 = 0x41564331;
+  
+  /// 'HVC1': High Efficiency Video Coding (H.265), MPEG-H Part 2
+  const hvc1 = 0x48564331;
+  
+  /// 'ZRLE': ZRLE (Zlib Run-Length Encoding), RLE + Zstd
+  const zrle = 0x5A524C45;
+  
+  /// 'MJPG': Motion JPEG
+  const mjpg = 0x4D4A5047;
+  
+  /// 'WEBP': WebP
+  const webp = 0x57454250;
 }
 ```
 
@@ -58,6 +62,68 @@ constset LosslessQualityMode: uint32 {
   
   /// 압축률을 우선시합니다. (성능이 낮아질 수 있음)
   const compressionPriority = 2;
+}
+```
+
+## CodecOptionKey
+
+```constset
+constset CodecOptionKey: string {
+  const colorFormat = "color-format";
+  const hardwareAcceleration = "hardware-acceleration";
+  const profile = "profile";
+  const level = "level";
+  const colorDepth = "color-depth";
+  const dynamicRange = "dynamic-range";
+  const colorRange = "color-range";
+  const displayDensity = "display-density";
+  const compressionLevel = "compression-level";
+  const tileSize = "tile-size";
+  const quantizeLevel = "quantize-level";
+}
+```
+
+## CodecOptionValue
+
+> **TODO**: mdproto 정의에 constset의 partial 정의가 가능하도록 추가해야 합니다. 너무 난잡합니다.
+
+```constset
+constset CodecOptionValue: string {
+  const kColorFormatYUV420 = "yuv420";
+  const kColorFormatYUV444 = "yuv444";
+  const kColorFormatRGB888 = "rgb888";
+  const kColorFormatRGB565 = "rgb565";
+
+  const kHardwareAccelerationAuto = "auto";
+  const kHardwareAccelerationFalse = "false";
+
+  const kProfileH264High10 = "h264_high10";
+  const kProfileH264High = "h264_high";
+  const kProfileH264Main = "h264_main";
+  const kProfileH264Baseline = "h264_baseline";
+  const kProfileHEVCMain = "hevc_main";
+  const kProfileHEVCMain10 = "hevc_main10";
+
+  const kColorDepth8Bit = "8bit";
+  const kColorDepth10Bit = "10bit";
+
+  const kColorRangeLimited = "limited";
+  const kColorRangeFull = "full";
+
+  const kDisplayDensityPerformance = "performance";
+  const kDisplayDensityBest = "best";
+
+  const kDynamicRangeSDR = "sdr";
+  const kDynamicRangeHDR = "hdr";
+
+  const kQuantizeLevelNone = "0";
+  const kQuantizeLevel1 = "1";
+  const kQuantizeLevel2 = "2";
+  const kQuantizeLevel3 = "3";
+
+  const kTileSize64x64 = "64";
+  const kTileSize128x128 = "128";
+  const kTileSize256x256 = "256";
 }
 ```
 
