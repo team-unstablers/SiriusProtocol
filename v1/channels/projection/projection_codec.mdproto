@@ -120,6 +120,8 @@ constset CodecOptionValue: string {
   const kQuantizeLevel1 = "1";
   const kQuantizeLevel2 = "2";
   const kQuantizeLevel3 = "3";
+  const kQuantizeLevel4 = "4";
+  const kQuantizeLevel5 = "5";
 
   const kTileSize64x64 = "64";
   const kTileSize128x128 = "128";
