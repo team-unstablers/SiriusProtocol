@@ -9,6 +9,48 @@ import:
 
 # PROJECTION SESSION MESSAGES
 
+# CONSTANTS
+
+## VideoSessionEndReason
+
+프로젝션 세션이 종료된 사유를 나타냅니다.
+
+```constset
+constset VideoSessionEndReason: int32 {
+    const unknown = 0;
+    /// 클라이언트의 요청으로 종료됨
+    const clientRequested = 1;
+    /// 디스플레이가 연결 해제됨
+    const displayDisconnected = 2;
+    /// 내부 오류로 종료됨
+    const internalError = 3;
+    /// 레코더(화면 캡쳐) 실패
+    const recorderFailed = 4;
+    /// 데이터 채널 오류
+    const dataChannelError = 5;
+}
+```
+
+## VideoSessionFailureReason
+
+프로젝션 세션 생성이 실패한 사유를 나타냅니다.
+
+```constset
+constset VideoSessionFailureReason: int32 {
+    const unknown = 0;
+    /// 요청한 소스를 찾을 수 없음
+    const sourceNotFound = 1;
+    /// 코덱 협상 실패
+    const codecNegotiationFailed = 2;
+    /// 서버 내부 오류
+    const serverError = 3;
+}
+```
+
+---
+
+# MESSAGE DEFINITIONS
+
 ```protobuf
 // @opcode: 0x8001
 message ProjectionRequest {
@@ -59,6 +101,7 @@ message ProjectionSessionCreatedEvent {
 // @opcode: 0x8022
 message ProjectionSessionCreationFailedEvent {
   SRUUID identifier = 1;
+  // @constset: VideoSessionFailureReason
   int32 reason = 2;
 
   optional string message = 3;
@@ -67,7 +110,7 @@ message ProjectionSessionCreationFailedEvent {
 // @opcode: 0x8023
 message ProjectionSessionChangedEvent {
   SRUUID identifier = 1;
-  int32 reason = 2;
+  int32 reason = 2; // TODO: constset 정의 필요
 
   ProjectionSource source = 3;
   Codec codec = 4;
@@ -76,6 +119,7 @@ message ProjectionSessionChangedEvent {
 // @opcode: 0x8024
 message ProjectionSessionEndedEvent {
   SRUUID identifier = 1;
+  // @constset: VideoSessionEndReason
   int32 reason = 2;
 
   optional string message = 3;
