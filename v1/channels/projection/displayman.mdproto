@@ -59,8 +59,8 @@ constset DisplayColorProfile: string {
     const sRGB = "sRGB";
     /// Adobe RGB 색상 프로파일
     const adobeRGB = "AdobeRGB";
-    /// DCI-P3 색상 프로파일
-    const dciP3 = "DCI-P3";
+    /// Display P3 색상 프로파일
+    const displayP3 = "Display P3";
 }
 ```
 
