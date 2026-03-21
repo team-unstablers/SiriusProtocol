@@ -1,0 +1,80 @@
+---
+syntax: "proto3"
+package: "sirius.msgdef.v1.channels.transfer"
+import:
+- "msgdef/common-types.proto"
+---
+
+# TRANSFER CHANNEL
+
+전송 채널은 파일, 클립보드 데이터, 또는 기타 대용량 데이터를 원격 호스트와 교환하기 위한 메시지 정의입니다.
+
+- **전송 채널은 여러 개일 수 있습니다**: 파일 전송 / 특정 목적의 데이터 전송 당 하나의 채널이 생성될 수 있습니다.
+- **전송 채널은 일회성입니다**: 전송이 완료되면 채널이 종료됩니다. 새로운 전송을 위해서는 새로운 채널이 생성되어야 합니다.
+- **전송 채널은 단방향입니다**: 각 채널은 한 방향으로만 데이터를 전송합니다. 양방향 통신이 필요한 경우, 두 개의 채널이 필요할 수 있습니다.
+    - 전송하는 쪽 (업로더)가 채널을 생성하고, 수신하는 쪽(다운로더)는 채널 생성 요청을 수락할 수 있습니다.
+    - 반대로, 수신하는 쪽이 채널을 생성하고, 전송하는 쪽이 채널 생성 요청을 수락할 수도 있습니다.
+
+다른 Sirius 채널과 마찬가지로, 이 채널은 신뢰성 있는 트랜스포트 위에서 사용하도록 설계되었습니다.
+
+---
+
+# CHANNEL ARGUMENTS
+
+이 채널은 `ChannelStartRequest` 메시지의 `args` 필드를 통해 다음과 같은 인자를 전달받을 수 있습니다:
+
+```typescript
+type TransferChannelArgs = [
+    purpose: 'file-transfer' | 'clipboard-data' | string, // 전송 목적
+    direction: 'upload' | 'download', // 전송 방향
+    ...args: string[] // 전송 목적에 따른 추가 인자 (예: 파일 이름, 클립보드 데이터 인덱스 등)
+];
+```
+
+---
+
+# MESSAGES
+
+## TransferStartNotification
+
+전송 시작 알림 메시지입니다.
+
+```protobuf
+/// 전송 시작 알림 메시지.
+// @opcode: 0x8001
+message TransferStartNotification {
+  /// 전송될 데이터의 실제 이름
+  string name = 1;
+  
+  /// 전송할 데이터의 총 크기 (바이트 단위)
+  uint64 totalSize = 2;
+  
+  /// 전송할 데이터의 MIME 타입 (예: "application/pdf", "text/plain" 등)
+  string contentType = 3;
+  
+  /// 전송할 데이터의 설명 (예: 클립보드 데이터 설명 등)
+  string description = 4;
+  
+  /// 선택적 무결성 검증에 사용
+  bytes sha256sum = 5;
+}
+```
+
+## TransferDataChunk
+
+```protobuf
+/// 전송 데이터 청크.
+// @opcode: 0x8002
+message TransferDataChunk {
+  /// 이 데이터 청크의 순서 번호 (0부터 시작)
+  uint64 sequenceNumber = 1;
+  
+  /// 이 청크에 포함된 데이터
+  bytes data = 2;
+  
+  uint32 crc32 = 3;
+  
+  /// 이 청크가 전송의 마지막 청크인지 여부
+  bool isEOF = 4;
+}
+```
