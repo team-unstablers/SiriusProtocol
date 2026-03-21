@@ -6,28 +6,34 @@ package: "sirius.msgdef"
 # FEATURE IDENTIFIERS
 
 Feature ID는 Sirius 프로토콜에서 특정 기능(Feature)을 식별하기 위해 사용하는 128-bit UUID입니다.
+각 기능은 고유한 Feature ID를 가지며, 기능 협상(`ServerHello`)과 채널 활성화(`ChannelStartRequest`)에 사용됩니다.
 
-각 기능은 고유한 Feature ID를 가지며, 이는 다음과 같은 목적으로 사용됩니다:
+Sirius 프로토콜은 `SiriusFeatureID` constset에 정의된 표준 기능 외에도,
+구현자가 임의의 UUID를 생성하여 새로운 기능을 정의하고 확장할 수 있도록 설계되었습니다.
 
-1. **기능 협상 (Negotiation)**: 핸드셰이크 단계(`ServerHello`)에서 서버가 클라이언트에게 자신이 지원하는 기능 목록을 알릴 때 사용합니다.
-2. **채널 활성화 (Activation)**: 새로운 채널을 생성(`ChannelStartRequest`)할 때, 해당 채널이 어떤 기능을 수행하는지 지정하기 위해 사용합니다.
+---
 
-Sirius 프로토콜은 `SiriusFeatureID` `constset`에 정의된 표준 기능 외에도, 구현자가 임의의 UUID를 생성하여 새로운 기능을 정의하고 확장할 수 있도록 설계되었습니다.
+# CONSTANTS
 
-## KNOWN FEATURE IDS
+## SiriusFeatureID
 
 ```constset
 constset SiriusFeatureID: UUID {
-    /// HIDIO: 키보드 / 마우스 등의 HID 입력을 리디렉션합니다.
-    const hidio = uuid"405E6E75-8B64-4E8F-91FF-E9E5A2C6BC77";
-    
-    /// Projection: 화면 캡쳐를 설정하고 제어합니다.
-    const projection = uuid"362A7AF0-2AC0-48DE-8F6B-5DB5D01E99DC";
-    
-    /// ProjectionData: 화면 캡쳐 데이터를 전송합니다.
-    const projectionData = uuid"CDE57E7B-9528-47F7-8FEC-14389301A990";
+  /// HIDIO: 키보드 / 마우스 등의 HID 입력을 리디렉션합니다.
+  const hidio = uuid"405E6E75-8B64-4E8F-91FF-E9E5A2C6BC77";
 
-    /// Clipboard: 클립보드 내용을 서버와 클라이언트 간에 동기화합니다.
-    const clipboard = uuid"8A3D9F2E-6B1C-4E75-B8A0-D4F2C7E19A3B";
+  /// Projection: 화면 캡처를 설정하고 제어합니다.
+  const projection = uuid"362A7AF0-2AC0-48DE-8F6B-5DB5D01E99DC";
+
+  /// ProjectionData: 화면 캡처 데이터를 전송합니다.
+  const projectionData = uuid"CDE57E7B-9528-47F7-8FEC-14389301A990";
+
+  /// Clipboard: 클립보드 내용을 서버와 클라이언트 간에 동기화합니다.
+  const clipboard = uuid"8A3D9F2E-6B1C-4E75-B8A0-D4F2C7E19A3B";
 }
 ```
+
+### DESCRIPTION
+
+- Sirius 프로토콜에서 표준으로 정의된 Feature ID 목록입니다.
+- `ServerHello.supportedFeatures`에서 서버가 지원하는 기능 목록을 알리고, `ChannelStartRequest.featureId`에서 채널이 수행할 기능을 지정할 때 사용됩니다.

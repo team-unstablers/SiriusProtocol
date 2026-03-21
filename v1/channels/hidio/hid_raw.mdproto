@@ -7,58 +7,52 @@ import:
 
 # HID RAW MESSAGES
 
-## RAW EVENT FORMAT
-- RawEvent 메시지는 HID 이벤트의 원시 형식을 나타냅니다.
-- 추후 펜 태블릿, 조이스틱 등 다양한 입력 장치의 이벤트를 지원하기 위해 확장될 수 있습니다.
+HID 이벤트의 원시(raw) 형식을 정의합니다.
+펜 태블릿, 조이스틱 등 키보드/마우스 외의 다양한 입력 장치를 지원하기 위한 확장 포인트입니다.
+
+---
+
+# STRUCTS
+
+## RawEvent
 
 ```protobuf
+/// HID 원시 이벤트
 message RawEvent {
+  /// 이벤트 식별자
   uint32 id = 1;
+  /// 이벤트 유형
   uint32 type = 2;
 
-  // HID 장치 식별자 (vendor)
+  /// HID 장치 식별자 (vendor ID)
   uint32 vendor = 3;
-  // HID 장치 식별자 (product)
+  /// HID 장치 식별자 (product ID)
   uint32 product = 4;
 
-  // 이벤트 파라미터 (#1 ~ #4)
-  // - 구체적인 의미는 장치 및 이벤트 유형에 따라 다릅니다.
-  // - fixed32(uint32_t) 이지만 장치 및 이벤트 유형에 따라 다음과 같이 사용될 수 있습니다
-  
-  // ## Example: Pen Tablet
-  //
-  // @code(0x01)
-  // struct ScreenMapEvent {
-  //     float32 xMin;     // param1
-  //     float32 xMax;     // param2
-  //     float32 yMin;     // param3
-  //     float32 yMax;     // param4
-  // }
-  //
-  // @code(0x02)
-  // struct PenEvent {
-  //     float32 x;        // param1
-  //     float32 y;        // param2
-  //     uint16_t pressure; // param3[0:15]
-  //     uint8_t  button;  // param3[16:23]
-  //     uint8_t  tiltMode;// param3[24:31]
-  //     uint16_t tiltX;    // param4[0:15]
-  //     uint16_t tiltY;    // param4[16:31]
-  // } __attribute__((packed));
-  //
-  // static_assert(sizeof(PenEvent) == sizeof(fixed32) * 4);
-  //
-  // ## NOTE
-  // - param1~4를 union struct로 사용해야 하는 경우, 아래 rule를 반드시 따라 주십시오.
-  //     - struct 내부의 모든 필드는 little-endian 형식이어야 합니다.
-  //     - struct 내부에 float 형식이 포함되는 경우, IEEE 754 표준을 따라야 합니다.
-  //     - __attribute__((packed)) 지시자를 사용하여 패딩이 없도록 해야 합니다.
-
+  /// 이벤트 파라미터 (#1 ~ #4)
+  /// 구체적인 의미는 장치 및 이벤트 유형에 따라 달라집니다.
   fixed32 param1 = 5;
   fixed32 param2 = 6;
   fixed32 param3 = 7;
   fixed32 param4 = 8;
 
+  /// 추가 데이터 (선택)
   optional bytes extra = 9;
 }
 ```
+
+### DESCRIPTION
+
+키보드/마우스 이벤트로 표현할 수 없는 HID 장치의 원시 이벤트를 전달하기 위한 범용 메시지입니다.
+`param1`~`param4`는 `fixed32` 타입이지만, 장치 및 이벤트 유형에 따라 float, 비트 필드 등 다양한 방식으로 해석될 수 있습니다.
+
+### IMPLEMENTATION NOTES
+
+- `param1`~`param4`를 union struct로 재해석하는 경우 다음 규칙을 따라야 합니다:
+  - struct 내부의 모든 필드는 little-endian 형식이어야 합니다.
+  - float 형식이 포함되는 경우 IEEE 754 표준을 따라야 합니다.
+  - `__attribute__((packed))` 지시자를 사용하여 패딩이 없도록 해야 합니다.
+- 펜 태블릿 이벤트 예시:
+  - `type=0x01` (ScreenMapEvent): `param1`=xMin, `param2`=xMax, `param3`=yMin, `param4`=yMax (모두 float32)
+  - `type=0x02` (PenEvent): `param1`=x(float32), `param2`=y(float32), `param3`=pressure[0:15]+button[16:23]+tiltMode[24:31], `param4`=tiltX[0:15]+tiltY[16:31]
+- 현재 RawEvent는 서버 측에서 아직 구현되지 않았습니다.

@@ -19,7 +19,7 @@ import:
 constset MouseMoveEventType: uint32 {
   /// 절대 좌표 이동 (화면의 특정 위치로 커서 이동)
   const absolute = 0;
-  
+
   /// 상대 좌표 이동 (현재 위치에서 특정 델타만큼 커서 이동)
   const relative = 1;
 }
@@ -31,7 +31,7 @@ constset MouseMoveEventType: uint32 {
 constset MouseButtonEventType: uint32 {
   /// 마우스 버튼 눌림
   const down = 0;
-  
+
   /// 마우스 버튼 뗌
   const up = 1;
 }
@@ -51,15 +51,16 @@ constset MouseButtonType: uint32 {
 
 ---
 
-# MESSAGE DEFINITIONS
+# STRUCTS
 
 ## CursorPositionPixel
 
 ```protobuf
+/// 픽셀 단위 커서 좌표
 message CursorPositionPixel {
-  /// 왼쪽 위 모서리를 기준으로 한 픽셀 좌표
+  /// 왼쪽 위 모서리를 기준으로 한 X 픽셀 좌표
   sint32 x = 1;
-  /// 왼쪽 위 모서리를 기준으로 한 픽셀 좌표
+  /// 왼쪽 위 모서리를 기준으로 한 Y 픽셀 좌표
   sint32 y = 2;
 }
 ```
@@ -67,6 +68,7 @@ message CursorPositionPixel {
 ## CursorPositionPercent
 
 ```protobuf
+/// 비율 기반 커서 좌표
 message CursorPositionPercent {
   /// 0.0 ~ 1.0 범위의 값; 왼쪽 위 모서리를 기준으로 함
   float x = 1;
@@ -78,11 +80,12 @@ message CursorPositionPercent {
 ## CursorPositionScope
 
 ```protobuf
+/// 커서 좌표의 기준 범위를 지정하는 타입
 message CursorPositionScope {
   oneof scope {
-    /// 한 디스플레이의 전체 영역을 기준으로 합니다.
-    /// - 만약 이 필드의 값을 -1로 설정하는 경우 기본 디스플레이를 의미합니다.
-    /// - 만약 이 필드의 값을 -2로 설정하는 경우 전체 화면 영역 (멀티 디스플레이 환경에서 모든 디스플레이를 포함한 영역)를 의미합니다.
+    /// 특정 디스플레이의 전체 영역을 기준으로 합니다.
+    /// - -1: 기본(메인) 디스플레이
+    /// - -2: 전체 화면 영역 (멀티 디스플레이 환경에서 모든 디스플레이를 포함한 영역)
     sint32 displayId = 1;
 
     /// 특정 윈도우 ID(핸들)을 기준으로 합니다.
@@ -91,14 +94,18 @@ message CursorPositionScope {
 }
 ```
 
+---
+
+# MESSAGES
+
 ## MouseMoveEvent
 
 ```protobuf
-/// 마우스 이동 이벤트를 나타내는 메시지
+/// 마우스 이동 이벤트
 message MouseMoveEvent {
   // @constset: MouseMoveEventType
   uint32 moveType = 1;
-  
+
   CursorPositionScope scope = 2;
 
   oneof position {
@@ -108,23 +115,41 @@ message MouseMoveEvent {
 }
 ```
 
+### DESCRIPTION
+
+마우스 커서 이동 이벤트를 나타냅니다. `moveType`에 따라 절대 좌표 또는 상대 좌표로 동작하며, `scope`를 통해 좌표의 기준 범위를 지정합니다.
+
+### IMPLEMENTATION NOTES
+
+- 절대 좌표(`absolute`) + 퍼센트(`percent`) 조합이 가장 일반적으로 사용됩니다.
+- 상대 좌표(`relative`) + 픽셀(`pixel`) 조합은 독점 모드(Exclusive Mode)에서 사용됩니다.
+- 서버는 수신한 좌표를 호스트 시스템의 좌표계로 변환하여 커서를 이동합니다. macOS의 경우 CoreGraphics 좌표계로 변환합니다.
+
 ## MouseButtonEvent
 
 ```protobuf
-/// 마우스 버튼 입력 이벤트를 나타내는 메시지
+/// 마우스 버튼 입력 이벤트
 message MouseButtonEvent {
   // @constset: MouseButtonEventType
   uint32 eventType = 1;
-  
+
   // @constset: MouseButtonType
   uint32 button = 2;
 }
 ```
 
+### DESCRIPTION
+
+마우스 버튼 누름/뗌 이벤트를 나타냅니다.
+
+### IMPLEMENTATION NOTES
+
+- 서버는 더블 클릭/트리플 클릭 판정을 자체적으로 수행합니다. 클라이언트는 개별 down/up 이벤트만 전송하면 됩니다.
+
 ## MouseWheelEvent
 
 ```protobuf
-/// 마우스 휠 이벤트를 나타내는 메시지
+/// 마우스 휠 이벤트
 message MouseWheelEvent {
   /// 수평 휠 델타
   float deltaX = 1;
@@ -132,3 +157,7 @@ message MouseWheelEvent {
   float deltaY = 2;
 }
 ```
+
+### DESCRIPTION
+
+마우스 휠(스크롤) 이벤트를 나타냅니다. 수평과 수직 방향의 스크롤 델타를 포함합니다.

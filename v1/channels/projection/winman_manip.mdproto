@@ -8,6 +8,8 @@ import:
 
 # PROJECTION WINDOW MANAGEMENT (MANIPULATION)
 
+윈도우의 상태 변경, 포커스 설정, 지오메트리 조정 등 윈도우 조작(Manipulation)을 위한 메시지 정의입니다.
+
 ---
 
 # CONSTANTS
@@ -18,16 +20,12 @@ import:
 constset WindowStateCommand: uint32 {
   /// 알 수 없는 오퍼레이션
   const unknown = 0;
-
   /// 윈도우를 닫습니다.
   const close = 1;
-
   /// 윈도우를 최소화합니다.
   const minimize = 2;
-
   /// 윈도우를 최대화합니다.
   const maximize = 3;
-
   /// 윈도우를 원래 크기로 복원합니다.
   const restore = 4;
 }
@@ -35,45 +33,66 @@ constset WindowStateCommand: uint32 {
 
 ---
 
-# MESSAGE DEFINITIONS
+# MESSAGES
+
+## WindowManipulationRequest
 
 ```protobuf
+/// 윈도우 조작을 요청합니다.
 // @opcode: 0x8081
 message WindowManipulationRequest {
   uint64 windowId = 1;
 
   oneof operation {
-    /// 닫기, 최소화, 최대화, 복원 등의 간단한 오퍼레이션을 수행합니다.
-    /// @note 이 오퍼레이션은 성공하지 않을 수도 있습니다. (예: '정말 닫으시겠습니까?' 같은 confirm 대화상자가 뜨거나, Window Role 자체가 닫히는 것을 막는 경우 등)
+    /// 닫기, 최소화, 최대화, 복원 등의 상태 변경 오퍼레이션을 수행합니다.
+    /// 이 오퍼레이션은 성공하지 않을 수도 있습니다.
+    /// (예: 확인 대화상자가 표시되거나, Window Role 자체가 닫히는 것을 막는 경우 등)
     // @constset: WindowStateCommand
     uint32 stateCommand = 2;
 
     /// 이 윈도우의 포커스 여부를 설정합니다.
-    /// - true로 설정하면 윈도우에 포커스가 주어집니다.
-    /// - false로 설정하면 윈도우에서 포커스가 제거됩니다.
-    /// @note 대부분의 윈도우 매니저에서는 포커스를 설정하면 해당 윈도우는 최상위로 올라오게 됩니다.
+    /// true로 설정하면 윈도우에 포커스가 주어지고,
+    /// false로 설정하면 윈도우에서 포커스가 제거됩니다.
+    /// 대부분의 윈도우 매니저에서는 포커스를 설정하면 해당 윈도우는 최상위로 올라오게 됩니다.
     bool focus = 3;
 
     /// 이 윈도우의 지오메트리를 변경합니다.
     SRRect setGeometry = 4;
 
-    /// 이 윈도우에 플래그를 임의로 설정합니다. (performs `window->setFlags(window->flags() | flagMask);`)
-    /// @note 안전을 위해 OS / DM 자체의 플래그가 아닌, 애플리케이션 레벨에서 정의한 플래그만 설정할 수 있습니다. (see WindowInfoFlags)
-    ///       또한, 서버 구현체에 따라 안전하지 않다고 판단되는 플래그는 무시될 수 있습니다.
+    /// 이 윈도우에 플래그를 설정합니다. (window->flags() | flagMask)
+    /// 안전을 위해 애플리케이션 레벨에서 정의한 플래그만 설정할 수 있습니다.
+    /// (WindowInfoFlags 참조)
+    /// 서버 구현체에 따라 안전하지 않다고 판단되는 플래그는 무시될 수 있습니다.
     uint64 setFlags = 13;
 
-    /// 이 윈도우에서 플래그를 임의로 제거합니다. (performs `window->setFlags(window->flags() & ~flagMask);`)
-    /// @note 안전을 위해 OS / DM 자체의 플래그가 아닌, 애플리케이션 레벨에서 정의한 플래그만 설정할 수 있습니다. (see WindowInfoFlags)
-    ///       또한, 서버 구현체에 따라 안전하지 않다고 판단되는 플래그는 무시될 수 있습니다.
+    /// 이 윈도우에서 플래그를 제거합니다. (window->flags() & ~flagMask)
+    /// 안전을 위해 애플리케이션 레벨에서 정의한 플래그만 제거할 수 있습니다.
+    /// (WindowInfoFlags 참조)
+    /// 서버 구현체에 따라 안전하지 않다고 판단되는 플래그는 무시될 수 있습니다.
     uint64 clearFlags = 14;
   }
 
-  // reserved for future use
+  /// 향후 확장을 위해 예약
   map<string, string> extraArgs = 15;
-  // reserved for future use
+  /// 향후 확장을 위해 예약
   uint32 flags = 16;
 }
+```
 
+### DESCRIPTION
+
+클라이언트가 서버에 특정 윈도우의 조작을 요청할 때 사용합니다.
+상태 변경(닫기/최소화/최대화/복원), 포커스 설정, 지오메트리 변경, 플래그 설정/해제 등의 오퍼레이션을 수행할 수 있습니다.
+
+### IMPLEMENTATION NOTES
+
+- `stateCommand`를 통한 윈도우 닫기는 애플리케이션이 확인 대화상자를 표시할 수 있어 즉시 성공하지 않을 수 있습니다.
+- `setFlags`/`clearFlags`는 OS 수준의 플래그가 아닌 `WindowInfoFlags`에 정의된 애플리케이션 레벨 플래그만 대상으로 합니다.
+
+## WindowManipulationResponse
+
+```protobuf
+/// 윈도우 조작 요청에 대한 응답입니다.
 // @opcode: 0x8082
 message WindowManipulationResponse {
   bool isSuccess = 1;
@@ -82,3 +101,8 @@ message WindowManipulationResponse {
   optional string message = 3;
 }
 ```
+
+### DESCRIPTION
+
+`WindowManipulationRequest`에 대한 응답 메시지입니다.
+`isSuccess`로 성공 여부를 확인하고, 실패 시 `code`와 `message`를 통해 사유를 확인할 수 있습니다.

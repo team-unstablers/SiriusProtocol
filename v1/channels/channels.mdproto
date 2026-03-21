@@ -5,62 +5,82 @@ import:
   - "msgdef/common-types.proto"
 ---
 
-# ABOUT CHANNELS
+# CHANNEL MANAGEMENT MESSAGES
 
-- 채널은 서버와 클라이언트 간의 다중화된 통신 경로를 제공합니다.
-- 각 기능(feature)은 한개 이상의 채널을 통해 데이터를 주고 받을 수 있습니다.
-- 채널은 트랜스포트 프로토콜 (QUIC, ...)의 멀티플렉싱 기능을 활용하여 구현됩니다.
-  - 채널과 연결된 하나의 멀티플랙싱 단위를 '스트림(stream')이라고 부릅니다.
+채널은 서버와 클라이언트 간의 다중화된 통신 경로를 제공합니다.
+각 기능(feature)은 하나 이상의 채널을 통해 데이터를 주고받으며,
+채널은 트랜스포트 프로토콜(QUIC 등)의 멀티플렉싱 단위인 스트림(stream)에 1:1로 매핑됩니다.
 
-- 채널은 서버나 클라이언트에 의해 열리고 닫힐 수 있습니다.
+채널은 서버 또는 클라이언트 어느 쪽에서든 열고 닫을 수 있습니다.
+메인 채널(연결 수립 직후 열리는 첫 번째 스트림)은 별도의 채널 오픈 절차 없이 사용됩니다.
 
-# CHANNEL LIFECYCLE
+---
 
-## 1. Opening a Channel
+# MESSAGES
 
-- 채널을 열기 위해, 서버/클라이언트는 트랜스포트 레이어의 멀티플렉싱 기능을 사용하여 새로운 스트림을 생성합니다.
-- 새 스트림이 성공적으로 열리면, 새로 열린 스트림을 통해 채널 오픈을 알리는 메시지를 상대방에게 보냅니다.
-
-- *NOTE*: 메인 채널 (연결 수립 직후 열리는 스트림)은 별도의 채널 오픈 절차 없이 사용되어야 합니다.
+## ChannelStartRequest
 
 ```protobuf
+/// 새로운 채널 오픈을 요청하는 메시지
 // @opcode: 0x0021
 message ChannelStartRequest {
+  /// 이 채널이 수행할 기능의 ID (SiriusFeatureID 참조)
   SRUUID featureId = 1;
+
+  /// 채널 고유 식별자
   SRUUID channelId = 2;
+
+  /// 기능별 추가 인자
   repeated string args = 3;
 }
 ```
 
-## 2. Channel Open Response
-- 채널 오픈 요청을 받은 쪽은 요청을 처리하고, 채널 오픈 응답 메시지를 보냅니다.
-- 응답 메시지에는 채널 오픈의 성공 여부와, 실패 시 이유를 포함할 수 있습니다.
+### DESCRIPTION
+
+- 새로운 기능 채널을 열기 위해 전송하는 메시지입니다.
+- 새 스트림이 열린 직후, 스트림을 연 쪽이 이 메시지를 상대방에게 전송합니다.
+- 상대방은 `ChannelStartResponse`로 수락 또는 거부를 응답합니다.
+
+### IMPLEMENTATION NOTES
+
+- `featureId`와 `channelId`가 누락된 요청은 거부되어야 합니다.
+- 수신 측은 `featureId`가 자신이 지원하는 기능인지 검증한 후 응답해야 합니다.
+- `args`의 의미는 기능(feature)마다 다르게 정의됩니다.
+
+## ChannelStartResponse
 
 ```protobuf
+/// 채널 오픈 요청에 대한 응답 메시지
 // @opcode: 0x0022
 message ChannelStartResponse {
+  /// 채널 오픈 수락 여부
   bool success = 1;
-  // TODO: reason, error code?
+  // TODO: 거부 사유 및 오류 코드 필드 추가
 }
 ```
 
-## 3. Closing a Channel
-- 채널을 닫기 위해, 서버/클라이언트는 채널 닫기 요청 메시지를 상대방에게 보냅니다.
+### DESCRIPTION
+
+- `ChannelStartRequest`에 대한 응답 메시지입니다.
+- `success`가 `true`이면 채널이 성공적으로 열린 것이며, 이후 해당 스트림을 통해 기능별 메시지를 교환할 수 있습니다.
+- `success`가 `false`이면 채널 오픈이 거부된 것이며, 요청 측은 해당 스트림을 닫아야 합니다.
+
+## ChannelCloseRequest
 
 ```protobuf
+/// 채널 닫기를 요청하는 메시지
 // @opcode: 0x0023
 message ChannelCloseRequest {
-  // TODO: reason
+  // TODO: 닫기 사유 필드 추가
 }
 ```
 
-# NOTE
+### DESCRIPTION
 
-- feature에 따라 채널 관리 정책이 있을 수 있습니다.
-  예를 들어, 일부 기능은 특정 채널이 항상 열려 있어야 할 수도 있고, 다른 기능은 필요에 따라 채널을 열고 닫을 수 있습니다.
+- 열려 있는 채널을 닫기 위해 전송하는 메시지입니다.
+- 서버 또는 클라이언트 어느 쪽에서든 전송할 수 있습니다.
 
-- 채널 오픈 요청이 거부될 수 있는 상황이 있을 수 있습니다.
-  예를 들어, 서버가 과부하 상태이거나, 클라이언트가 권한이 없는 기능에 접근하려고 할 때 등입니다.
+### IMPLEMENTATION NOTES
 
-- feature에 따라 채널 오픈 이후에는 Sirius가 아닌 전혀 다른 프로토콜로 Upgrade 될 수도 있습니다.
-  - 이 경우, Sirius는 채널 오픈 이후 데이터 전송에 관여하지 않습니다.
+- 기능(feature)에 따라 채널 관리 정책이 다를 수 있습니다. 일부 기능은 특정 채널이 항상 열려 있어야 하고, 다른 기능은 필요에 따라 채널을 열고 닫을 수 있습니다.
+- 기능에 따라 채널 오픈 이후 Sirius 프레이밍이 아닌 다른 프로토콜로 업그레이드될 수 있습니다. 이 경우 Sirius는 채널 오픈 이후 데이터 전송에 관여하지 않습니다.

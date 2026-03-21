@@ -8,28 +8,14 @@ import:
 
 # PROJECTION WINDOW MANAGEMENT (QUERY)
 
-## 'Window Filter'
-- 윈도우 목록 요청 시 특정 조건에 맞는 윈도우만 필터링하여 요청할 수 있습니다.
+윈도우 목록 조회, 윈도우 정보/아이콘/섬네일 조회, 윈도우 변경 이벤트 구독 등
+윈도우 관리의 읽기(Query) 측면을 정의하는 메시지입니다.
 
-### EXAMPLES
+윈도우 필터(`WindowFilter`)를 사용하여 특정 조건에 맞는 윈도우만 필터링하여 요청할 수 있습니다.
+
+필터 예시:
 - `(windowID IS 1234567890) OR (pid IS 9876)`
-- `(application ICONTAINS "Google Chrome") OR (application ICONTAINS "chrome.exe") OR (application ICONTAINS "google-chrome")`
-
-### SYNOPSIS
-```swift
-@cron(schedule: "every 1 hour")
-func digitalDetoxBot() async {
-    let windows = await projectionChannel.requestWindowList(
-      filter: .or([
-        .windowTitle.icontains("HENTAI"),
-      ])
-    )
-
-    windows.forEach { await projectionChannel.closeWindow(windowId: $0.windowId) }
-    /// remoteShellChannel은 실제로 없습니다
-    await remoteShellChannel.evaluate("say '야! 내가 이런거 보지 말랬지!!'")
-}
-```
+- `(application ICONTAINS "Google Chrome") OR (application ICONTAINS "chrome.exe")`
 
 ---
 
@@ -41,43 +27,33 @@ func digitalDetoxBot() async {
 optionset WindowInfoFlags: uint32 {
   /// 윈도우가 현재 포커스를 받고 있습니다.
   option isFocused = 0x0001;
-
   /// 이 윈도우는 사용자에게 보이지 않도록 설정되어 있습니다.
   option isHidden = 0x0002;
-
   /// 이 윈도우는 타이틀 바 등의 윈도우 데코레이션을 가지고 있지 않습니다.
   option noWindowDecoration = 0x0004;
-
   /// 이 윈도우는 작업 표시줄 (Windows, Linux) 또는 독 (macOS)에 표시되지 않습니다.
   option skipWindowEntry = 0x0008;
-
   /// 윈도우가 최소화 된 상태입니다.
   option isMinimized = 0x0010;
-
   /// 윈도우가 최대화 된 상태입니다.
   option isMaximized = 0x0020;
-
   /// 윈도우가 전체 화면 모드로 표시되고 있습니다.
   option isFullscreen = 0x0040;
-
   /// 이 윈도우는 최소화가 불가능합니다.
   option cannotMinimize = 0x0100;
-
   /// 이 윈도우는 최대화가 불가능합니다.
   option cannotMaximize = 0x0200;
-
   /// 이 윈도우는 전체 화면 모드로 전환할 수 없습니다.
   option cannotFullscreen = 0x0400;
-
   /// 이 윈도우는 항상 위에 표시되는(topmost) 상태입니다.
   option isTopmost = 0x1000;
-
   /// 이 윈도우는 항상 아래에 표시되는(bottommost) 상태입니다.
   option isBottommost = 0x2000;
-
   /// Linux: 이 윈도우는 컴포지터를 스킵합니다.
-  /// Windows: 이 윈도우는 DWM (Desktop Window Manager)을 스킵합니다. (Aero Glass 효과 등이 적용되지 않음)
-  /// - 알려진 호환성 문제가 있는 애플리케이션이나, low-latency를 보장받아야 하는 애플리케이션에 설정되어 있을 수 있습니다.
+  /// Windows: 이 윈도우는 DWM (Desktop Window Manager)을 스킵합니다.
+  /// (Aero Glass 효과 등이 적용되지 않음)
+  /// 알려진 호환성 문제가 있는 애플리케이션이나, low-latency를 보장받아야 하는
+  /// 애플리케이션에 설정되어 있을 수 있습니다.
   option skipCompositor = 0x00010000;
 }
 ```
@@ -95,11 +71,9 @@ constset WindowRole: uint32 {
   const tooltip = 3;
   /// 메뉴
   const menu = 4;
-
   /// 알림 윈도우
   const notification = 5;
-
-  // 여기에 뭐가 더 들어가야 하지...?
+  // TODO: 추가 윈도우 역할 정의가 필요할 수 있음 (예: popup, splash, toolbar 등)
 }
 ```
 
@@ -108,40 +82,34 @@ constset WindowRole: uint32 {
 ```optionset
 optionset WindowHint: uint32 {
   /// 이 윈도우는 시스템 UI의 일부입니다.
-  /// 예시: 탐색 막대, 상태 표시줄, 알림 센터, IME 패널 (한글-한자 변환 / 일본어・중국어 변환 후보 등)
+  /// 예시: 탐색 막대, 상태 표시줄, 알림 센터, IME 패널 등
   option systemUI = 0x0001;
-
   /// 이 윈도우는 시스템에 의해 응답하지 않는 것으로 보고되었습니다.
   option notResponding = 0x0002;
-
-  /// 이 윈도우는 시스템 정책에 의해 조작이 불가능할 것으로 예상됩니다. (다른 유저 세션의 윈도우, 고권한 프로세스의 윈도우, UAC 등)
+  /// 이 윈도우는 시스템 정책에 의해 조작이 불가능할 것으로 예상됩니다.
+  /// (다른 유저 세션의 윈도우, 고권한 프로세스의 윈도우, UAC 등)
   option inaccessible = 0x0004;
-
   /// 이 윈도우는 시스템 정책에 의해 캡처가 불가능할 것으로 예상됩니다. (DRM 보호 컨텐츠 등)
-  /// @note 이 힌트는 무조건 캡처가 불가능하다는 보장이 아닙니다. 실제로 캡처는 이루어질 수 있으나, 검은 화면 등으로 나타날 수 있습니다.
+  /// 이 힌트는 무조건 캡처가 불가능하다는 보장이 아닙니다.
+  /// 실제로 캡처는 이루어질 수 있으나, 검은 화면 등으로 나타날 수 있습니다.
   option protectedContent = 0x0008;
-
   /// 이 윈도우는 제 3자의 외부 DRM 솔루션, 안티-치트 솔루션 등에 의해 강력히 보호되는 것으로 보입니다.
-  /// - 이 윈도우를 캡쳐하거나 원격으로 조작하려고 시도할 경우, 서버 구현체의 프로세스가 충돌하거나 강제 종료될 수도 있기 때문에 프로젝션을 권장하지 않습니다.
-  /// - e.g.) AhnLab Safe Transaction, Fasoo DRM 등
+  /// 이 윈도우를 캡쳐하거나 원격으로 조작하려고 시도할 경우, 서버 구현체의 프로세스가
+  /// 충돌하거나 강제 종료될 수도 있기 때문에 프로젝션을 권장하지 않습니다.
+  /// (예: AhnLab Safe Transaction, Fasoo DRM 등)
   option aggressiveProtectedContent = 0x0010;
-
   /// 이 윈도우는 현재 다른 창에 가려져 있거나 해서 화면에 보이지 않는 상태입니다.
   option notVisibleOnScreen = 0x0020;
-
   /// 이 윈도우는 자주 변경되지 않는 정적 콘텐츠를 포함하고 있습니다.
   option staticContent = 0x0100;
-
   /// 이 윈도우는 빠르게 갱신되는 동적 컨텐츠 (예: 비디오 플레이어, 게임 등)를 포함하고 있습니다.
   option dynamicContent = 0x0200;
-
   /// 이 윈도우는 그림자를 포함하고 있습니다.
-  /// - 윈도우 외곽에 그림자가 있는 경우에 유용합니다.
-  /// - AppStream (가칭) 같은 기능을 구현할 때, 클라이언트 측에서 대신 shadow를 그리도록 할 수 있습니다.
+  /// 윈도우 외곽에 그림자가 있는 경우에 유용합니다.
+  /// 클라이언트 측에서 대신 shadow를 그리도록 할 수 있습니다.
   option hasShadow = 0x1000;
-
   /// 이 윈도우는 투명한 영역을 포함하고 있습니다.
-  /// - border-radius가 설정되었거나, 부분적으로 투명한 UI를 포함하는 윈도우에 유용합니다.
+  /// border-radius가 설정되었거나, 부분적으로 투명한 UI를 포함하는 윈도우에 유용합니다.
   option hasTransparency = 0x2000;
 }
 ```
@@ -153,8 +121,8 @@ constset WindowFilterExpressionOperator: uint32 {
   const matchExact = 0;
   const matchContains = 1;
   const matchIContains = 2;
-  /// ## ABOUT REGEX
-  /// - REGEX 구현체는 Perl-compatible한 정규 표현식 (PCRE)를 사용하는 것을 권장하나, 강제 사항은 아닙니다.
+  /// REGEX 구현체는 Perl-compatible한 정규 표현식 (PCRE)를 사용하는 것을 권장하나,
+  /// 강제 사항은 아닙니다.
   const matchRegex = 3;
 }
 ```
@@ -163,8 +131,10 @@ constset WindowFilterExpressionOperator: uint32 {
 
 ```constset
 constset WindowFilterOperator: uint32 {
-  const and = 0; // 모든 조건 만족
-  const or = 1;  // 하나라도 만족
+  /// 모든 조건 만족
+  const and = 0;
+  /// 하나라도 만족
+  const or = 1;
 }
 ```
 
@@ -173,10 +143,8 @@ constset WindowFilterOperator: uint32 {
 ```optionset
 optionset WindowListRequestFlags: uint32 {
   /// 페이지네이션 된 결과를 요청합니다.
-  /// (사실 말이 페이지네이션이지 N개씩 분할해서 보내달라는 뜻입니다)
-  /// - 페이지네이션 사이즈는 서버 구현체에 따라 다를 수 있습니다.
+  /// 페이지네이션 사이즈는 서버 구현체에 따라 다를 수 있습니다.
   option paginated = 0x0001;
-
   /// 통상적으로 숨겨진 윈도우들도 함께 요청합니다.
   option includeHiddenWindows = 0x0002;
 }
@@ -188,19 +156,14 @@ optionset WindowListRequestFlags: uint32 {
 optionset WindowChangeEventType: uint32 {
   /// 윈도우가 포커스를 얻었습니다.
   option focused = 0x0001;
-
   /// 윈도우가 포커스를 잃었습니다.
   option unfocused = 0x0002;
-
   /// 윈도우가 이동되었습니다.
   option moved = 0x0004;
-
   /// 윈도우가 크기 조절되었습니다.
   option resized = 0x0008;
-
   /// 윈도우가 닫혔습니다.
   option closed = 0x0010;
-
   /// 윈도우의 메타데이터가 크게 변경되었습니다.
   option metadataChanged = 0x0020;
 }
@@ -212,19 +175,22 @@ optionset WindowChangeEventType: uint32 {
 optionset WindowEventSubscriptionFlags: uint32 {
   /// 구독된 윈도우 이벤트에 대한 초기 상태 스냅샷을 즉시 전송합니다.
   option sendInitialSnapshot = 0x0001;
-
   /// 최소한의 데이터만 포함하도록 노력합니다.
-  /// - WINDOW_CHANGE_EVENT_TYPE_METADATA_CHANGED를 제외한 모든 이벤트에서, 관련 없는 WindowInfo의 필드를 생략하거나 아예 포함하지 않도록 합니다.
-  /// - 이 플래그가 설정되지 않으면, 모든 이벤트에서 리치한 WindowInfo 데이터가 포함됩니다.
+  /// WINDOW_CHANGE_EVENT_TYPE_METADATA_CHANGED를 제외한 모든 이벤트에서,
+  /// 관련 없는 WindowInfo의 필드를 생략하거나 아예 포함하지 않도록 합니다.
+  /// 이 플래그가 설정되지 않으면, 모든 이벤트에서 리치한 WindowInfo 데이터가 포함됩니다.
   option minimalData = 0x0002;
 }
 ```
 
 ---
 
-# MESSAGE DEFINITIONS
+# STRUCTS
+
+## WindowFilterExpression
 
 ```protobuf
+/// 단일 윈도우 필터 조건
 message WindowFilterExpression {
   // @constset: WindowFilterExpressionOperator
   uint32 operator = 1;
@@ -232,61 +198,50 @@ message WindowFilterExpression {
 
   oneof field {
     /// 윈도우 핸들 ID로 매칭합니다.
-    /// @note OS / DM에 따라 윈도우 핸들 ID의 크기가 다를 수 있으므로 fixed64 타입을 사용합니다.
+    /// OS / DM에 따라 윈도우 핸들 ID의 크기가 다를 수 있으므로 uint64 타입을 사용합니다.
     uint64 windowId = 3;
-
     /// 프로세스 ID로 매칭합니다.
     uint64 pid = 4;
-
     /// 윈도우 타이틀로 매칭합니다.
     string windowTitle = 5;
-
     /// 애플리케이션 이름(실행 파일 이름)으로 매칭합니다.
-    /// ## NOTE: Platform Differences
-    /// - Windows의 경우 실행 파일 이름 (예: "chrome.exe")을 의미합니다.
-    /// - macOS / Linux의 경우 프로세스 이름 (ARGV[0])을 의미합니다. 이는 전체 경로일 수도 있고, 단순 실행 파일 이름일 수도 있습니다.
-    ///   - eg: `/Applications/Google Chrome.app/Contents/MacOS/Google Chrome`
-    ///   - eg: `/usr/bin/google-chrome-stable`
-    ///   - eg: `nginx: worker process` (자기 자신의 ARGV[0]을 수정하는 케이스)
-    ///   - eg: `python3 script.py` (전체 경로가 아닌 실행 파일만 나타나는 케이스)
+    /// 플랫폼별 차이:
+    /// - Windows: 실행 파일 이름 (예: "chrome.exe")
+    /// - macOS / Linux: 프로세스 이름 (ARGV[0]). 전체 경로일 수도 있고,
+    ///   단순 실행 파일 이름일 수도 있습니다.
     string applicationName = 6;
-
     /// 번들 ID로 매칭합니다.
-    /// - 의미는 서버 구현체에 따라 다를 수 있습니다.
-    ///   Noctiluca의 경우 macOS의 번들 ID (예: "com.apple.Safari")를 의미합니다.
-    /// - eg) Android의 경우 패키지 이름 (예: "com.google.android.youtube")을 의미할 수 있습니다.
+    /// 의미는 서버 구현체에 따라 다를 수 있습니다.
+    /// (예: macOS "com.apple.Safari", Android "com.google.android.youtube")
     string applicationBundleId = 7;
-
     /// 윈도우 클래스 이름으로 매칭합니다.
-    /// - macOS는 클래스 이름을 지원하지 않으므로 이 필드는 무시될 수 있습니다.
+    /// macOS는 클래스 이름을 지원하지 않으므로 이 필드는 무시될 수 있습니다.
     string windowClass = 8;
   }
 }
+```
 
+## WindowFilter
+
+```protobuf
+/// 윈도우 필터 (재귀적 트리 구조)
 message WindowFilter {
   // @constset: WindowFilterOperator
   uint32 operator = 1;
 
-  // 조건들의 목록 (Recursive)
-  // 예: (A OR B) AND C 를 표현 가능
+  /// 조건들의 목록 (재귀적 구조로 복합 조건을 표현할 수 있음)
+  /// 예: (A OR B) AND C
   repeated WindowFilter expressions = 2;
 
-  // 혹은 단일 조건 (Leaf Node)
+  /// 단일 조건 (리프 노드)
   optional WindowFilterExpression expression = 3;
 }
+```
 
-// @opcode: 0x8061
-message WindowListRequest {
-  uint64 requestId = 1;
+## WindowInfo
 
-  /// 필터 조건
-  optional WindowFilter filter = 2;
-
-  /// 윈도우 목록 요청 플래그
-  // @optionset: WindowListRequestFlags
-  uint32 flags = 16;
-}
-
+```protobuf
+/// 윈도우의 상세 정보
 message WindowInfo {
   uint64 windowId = 1;
   uint64 pid = 2;
@@ -307,10 +262,14 @@ message WindowInfo {
   optional bytes thumbnail = 12;
 
   /// 추가 메타데이터
-  /// @note **모든 메타데이터 키는 optional입니다**. 모든 서버 구현체가 이를 반드시 지원한다는 보장은 없고, 모든 키가 항상 제공되는 것도 아닙니다.
-  /// @note 구현체-specific 메타데이터 키는 reversed domain name 형식을 따르십시오. (예: "com.contoso.superremote.virtual-display-purpose" 등)
-  /// @key "related-display-id": 이 디스플레이가 다른 디스플레이의 미러링을 수행하고 있는 경우, 그 원본 디스플레이 ID를 나타냅니다.
-  /// @key "connection-type": 디스플레이 연결 유형 (예: "HDMI", "DisplayPort", "USB-C", "Wireless" 등)
+  /// 모든 메타데이터 키는 optional입니다. 모든 서버 구현체가 이를 반드시 지원한다는 보장은 없고,
+  /// 모든 키가 항상 제공되는 것도 아닙니다.
+  /// 구현체-specific 메타데이터 키는 reversed domain name 형식을 따르십시오.
+  /// (예: "com.contoso.superremote.virtual-display-purpose" 등)
+  /// @key "related-display-id": 이 디스플레이가 다른 디스플레이의 미러링을 수행하고 있는 경우,
+  ///       그 원본 디스플레이 ID를 나타냅니다.
+  /// @key "connection-type": 디스플레이 연결 유형
+  ///       (예: "HDMI", "DisplayPort", "USB-C", "Wireless" 등)
   map<string, string> metadata = 13;
 
   /// 윈도우 힌트
@@ -320,7 +279,39 @@ message WindowInfo {
   // @optionset: WindowInfoFlags
   uint32 flags = 15;
 }
+```
 
+---
+
+# MESSAGES
+
+## WindowListRequest
+
+```protobuf
+/// 윈도우 목록을 요청합니다.
+// @opcode: 0x8061
+message WindowListRequest {
+  uint64 requestId = 1;
+
+  /// 필터 조건
+  optional WindowFilter filter = 2;
+
+  /// 윈도우 목록 요청 플래그
+  // @optionset: WindowListRequestFlags
+  uint32 flags = 16;
+}
+```
+
+### DESCRIPTION
+
+클라이언트가 서버에 윈도우 목록을 요청할 때 사용합니다.
+`filter`를 지정하면 조건에 맞는 윈도우만 반환됩니다.
+서버는 `WindowListResponse`로 응답합니다.
+
+## WindowListResponse
+
+```protobuf
+/// 윈도우 목록 요청에 대한 응답입니다.
 // @opcode: 0x8062
 message WindowListResponse {
   uint64 requestId = 1;
@@ -329,39 +320,97 @@ message WindowListResponse {
   /// 페이지네이션 된 결과의 마지막 페이지인지 여부
   bool isLastPage = 3;
 }
+```
 
+### DESCRIPTION
+
+`WindowListRequest`에 대한 응답 메시지입니다.
+`paginated` 플래그가 설정된 경우, `isLastPage`로 추가 페이지 존재 여부를 확인할 수 있습니다.
+
+## GetWindowInfoRequest
+
+```protobuf
+/// 특정 윈도우의 상세 정보를 요청합니다.
 // @opcode: 0x8063
 message GetWindowInfoRequest {
   uint64 requestId = 1;
   uint64 windowId = 2;
 }
+```
 
+### DESCRIPTION
+
+클라이언트가 특정 윈도우의 상세 정보를 요청할 때 사용합니다.
+서버는 `GetWindowInfoResponse`로 응답합니다.
+
+## GetWindowInfoResponse
+
+```protobuf
+/// 특정 윈도우 정보 요청에 대한 응답입니다.
 // @opcode: 0x8064
 message GetWindowInfoResponse {
   uint64 requestId = 1;
   optional WindowInfo info = 2;
 }
+```
 
+### DESCRIPTION
+
+`GetWindowInfoRequest`에 대한 응답 메시지입니다.
+해당 윈도우가 존재하지 않는 경우 `info`는 비어있을 수 있습니다.
+
+## GetWindowIconRequest
+
+```protobuf
+/// 특정 윈도우의 아이콘을 요청합니다.
 // @opcode: 0x8065
 message GetWindowIconRequest {
   uint64 requestId = 1;
   uint64 windowId = 2;
 }
+```
 
+### DESCRIPTION
+
+클라이언트가 특정 윈도우의 아이콘 이미지를 요청할 때 사용합니다.
+
+## GetWindowIconResponse
+
+```protobuf
+/// 윈도우 아이콘 요청에 대한 응답입니다.
 // @opcode: 0x8066
 message GetWindowIconResponse {
   uint64 requestId = 1;
   uint64 windowId = 2;
-  /// 이 윈도우의 아이콘 이미지 (PNG8 (with alpha channel) 형식, requires square aspect ratio, 최대 256x256)
+  /// 이 윈도우의 아이콘 이미지 (PNG8 (with alpha channel) 형식, 정사각형, 최대 256x256)
   optional bytes icon = 3;
 }
+```
 
+### DESCRIPTION
+
+`GetWindowIconRequest`에 대한 응답 메시지입니다.
+아이콘이 없는 경우 `icon`은 비어있을 수 있습니다.
+
+## GetWindowThumbnailRequest
+
+```protobuf
+/// 특정 윈도우의 섬네일을 요청합니다.
 // @opcode: 0x8067
 message GetWindowThumbnailRequest {
   uint64 requestId = 1;
   uint64 windowId = 2;
 }
+```
 
+### DESCRIPTION
+
+클라이언트가 특정 윈도우의 섬네일 이미지를 요청할 때 사용합니다.
+
+## GetWindowThumbnailResponse
+
+```protobuf
+/// 윈도우 섬네일 요청에 대한 응답입니다.
 // @opcode: 0x8068
 message GetWindowThumbnailResponse {
   uint64 requestId = 1;
@@ -369,7 +418,17 @@ message GetWindowThumbnailResponse {
   /// 이 윈도우의 섬네일 이미지 (PNG8 (with alpha channel) 형식, aspect ratio 유지, 최대 512x512)
   optional bytes thumbnail = 3;
 }
+```
 
+### DESCRIPTION
+
+`GetWindowThumbnailRequest`에 대한 응답 메시지입니다.
+섬네일이 없는 경우 `thumbnail`은 비어있을 수 있습니다.
+
+## SubscribeWindowEventsRequest
+
+```protobuf
+/// 윈도우 변경 이벤트를 구독합니다.
 // @opcode: 0x8069
 message SubscribeWindowEventsRequest {
   uint64 requestId = 1;
@@ -379,23 +438,53 @@ message SubscribeWindowEventsRequest {
   /// 비어있는 경우 모든 윈도우에 대한 이벤트를 구독합니다.
   optional WindowFilter filter = 3;
 
-  uint32 flags = 16; // reserved
+  // @optionset: WindowEventSubscriptionFlags
+  uint32 flags = 16;
 }
+```
 
+### DESCRIPTION
+
+클라이언트가 윈도우 변경 이벤트를 구독할 때 사용합니다.
+`eventMask`로 특정 이벤트 유형만 필터링하고, `filter`로 특정 윈도우만 대상으로 지정할 수 있습니다.
+
+## SubscribeWindowEventsResponse
+
+```protobuf
+/// 윈도우 이벤트 구독 요청에 대한 응답입니다.
 // @opcode: 0x806A
 message SubscribeWindowEventsResponse {
   uint64 requestId = 1;
   /// 구독 식별자.
   SRUUID subscriptionId = 2;
 }
+```
 
+### DESCRIPTION
+
+`SubscribeWindowEventsRequest`에 대한 응답 메시지입니다.
+반환된 `subscriptionId`는 이후 구독 해제 시 사용됩니다.
+
+## UnsubscribeWindowEventsRequest
+
+```protobuf
+/// 윈도우 변경 이벤트 구독을 해제합니다.
 // @opcode: 0x806B
 message UnsubscribeWindowEventsRequest {
   uint64 requestId = 1;
   /// 구독 식별자.
   SRUUID subscriptionId = 2;
 }
+```
 
+### DESCRIPTION
+
+클라이언트가 기존 윈도우 이벤트 구독을 해제할 때 사용합니다.
+
+## UnsubscribeWindowEventsResponse
+
+```protobuf
+/// 윈도우 이벤트 구독 해제 요청에 대한 응답입니다.
 // @opcode: 0x806C
 message UnsubscribeWindowEventsResponse {
   uint64 requestId = 1;
@@ -404,7 +493,16 @@ message UnsubscribeWindowEventsResponse {
   /// 구독 해제 성공 여부.
   bool isSuccess = 3;
 }
+```
 
+### DESCRIPTION
+
+`UnsubscribeWindowEventsRequest`에 대한 응답 메시지입니다.
+
+## WindowChangedEvent
+
+```protobuf
+/// 윈도우 변경 이벤트입니다.
 // @opcode: 0x806D
 message WindowChangedEvent {
   /// 이벤트 유형 코드
@@ -416,3 +514,12 @@ message WindowChangedEvent {
   optional WindowInfo info = 3;
 }
 ```
+
+### DESCRIPTION
+
+서버가 구독 중인 클라이언트에게 윈도우 상태 변경을 알릴 때 전송하는 이벤트입니다.
+포커스 변경, 이동, 크기 조절, 닫힘, 메타데이터 변경 등의 이벤트가 포함됩니다.
+
+### IMPLEMENTATION NOTES
+
+- `WindowEventSubscriptionFlags.minimalData`가 설정된 경우, `metadataChanged` 이벤트를 제외하고는 `info`에 최소한의 필드만 포함됩니다.

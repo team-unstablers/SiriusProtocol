@@ -20,16 +20,16 @@ import:
 constset CodecFourCC: uint32 {
   /// 'AVC1': Advanced Video Coding (H.264), MPEG-4 Part 10
   const avc1 = 0x41564331;
-  
+
   /// 'HVC1': High Efficiency Video Coding (H.265), MPEG-H Part 2
   const hvc1 = 0x48564331;
-  
+
   /// 'ZRLE': ZRLE (Zlib Run-Length Encoding), RLE + Zstd
   const zrle = 0x5A524C45;
-  
+
   /// 'MJPG': Motion JPEG
   const mjpg = 0x4D4A5047;
-  
+
   /// 'WEBP': WebP
   const webp = 0x57454250;
 }
@@ -44,7 +44,7 @@ constset AutoQualityMode: uint32 {
 
   /// 가능한 최고의 품질을 우선시합니다.
   const qualityPriority = 1;
-  
+
   /// 가능한 최고의 성능을 우선시합니다.
   const performancePriority = 2;
 }
@@ -59,7 +59,7 @@ constset LosslessQualityMode: uint32 {
 
   /// 성능을 우선시합니다. (압축률이 낮아질 수 있음)
   const speedPriority = 1;
-  
+
   /// 압축률을 우선시합니다. (성능이 낮아질 수 있음)
   const compressionPriority = 2;
 }
@@ -83,9 +83,13 @@ constset CodecOptionKey: string {
 }
 ```
 
-## CodecOptionValue
+### DESCRIPTION
 
-> **TODO**: mdproto 정의에 constset의 partial 정의가 가능하도록 추가해야 합니다. 너무 난잡합니다.
+- 코덱별 추가 옵션의 키를 정의합니다.
+- `Codec.options` 필드에 `"key: 'value'; key2: 'value2'"` 형식의 문자열로 직렬화되어 전달됩니다.
+- `!required` 접미사를 붙이면 해당 옵션이 필수(mandatory)로 취급되며, 코덱 협상 시 양측이 반드시 지원해야 합니다.
+
+## CodecOptionValue
 
 ```constset
 constset CodecOptionValue: string {
@@ -129,9 +133,18 @@ constset CodecOptionValue: string {
 }
 ```
 
+### DESCRIPTION
+
+- `CodecOptionKey`에 대응하는 값 상수들을 정의합니다.
+- 각 키별로 허용되는 값의 범위가 다르며, 접두사(`kColorFormat`, `kProfile` 등)로 관련 키를 구분합니다.
+
+### IMPLEMENTATION NOTES
+
+- `// TODO:` mdproto 정의에 constset의 partial 정의가 가능하도록 추가해야 합니다. 현재 하나의 constset에 모든 키의 값이 혼합되어 있습니다.
+
 ---
 
-# MESSAGE DEFINITIONS
+# STRUCTS
 
 ## AutoQuality
 
@@ -169,18 +182,21 @@ message VariableBitrateQuality {
 
 ```protobuf
 /// 고정 품질 (CQP/CRF) 설정
-/// - 0부터 100까지의 값으로 품질을 지정합니다.
-/// - 값이 낮을수록 더 높은 품질을 나타낼 수도 있고, 반대일 수도 있으나 일반적으로 100이 최고 품질입니다. (구현체 의존적)
+/// 0부터 100까지의 값으로 품질을 지정합니다.
 message FixedQuality {
   int32 quality = 1;
 }
 ```
 
+### IMPLEMENTATION NOTES
+
+- 값이 낮을수록 더 높은 품질을 나타낼 수도 있고, 반대일 수도 있으나 일반적으로 100이 최고 품질입니다. 실제 동작은 구현체에 의존적입니다.
+
 ## LosslessQuality
 
 ```protobuf
 /// 무손실 품질 설정
-/// - 무손실 압축을 사용하여 품질 저하 없이 데이터를 전송합니다.
+/// 무손실 압축을 사용하여 품질 저하 없이 데이터를 전송합니다.
 message LosslessQuality {
   // @constset: LosslessQualityMode
   uint32 mode = 1;
@@ -190,7 +206,7 @@ message LosslessQuality {
 ## Codec
 
 ```protobuf
-/// 비디오 코덱 설정 메시지
+/// 비디오 코덱 설정
 message Codec {
   /// FourCC 코드값 (Big-Endian)
   // @constset: CodecFourCC
@@ -216,7 +232,13 @@ message Codec {
 }
 ```
 
-# IMPLEMENTATION NOTES
+### DESCRIPTION
+
+- 비디오 프로젝션에 사용할 코덱, 품질, 해상도, 프레임레이트 등을 종합적으로 정의하는 구조체입니다.
+- 클라이언트는 `ProjectionRequest.preferredCodecs`에 이 구조체의 배열을 전달하고, 서버는 코덱 협상을 거쳐 최종 코덱을 결정합니다.
+
+### IMPLEMENTATION NOTES
+
 - `fourCC` 필드는 반드시 빅 엔디안 바이트 오더로 인코딩되어야 합니다.
-- `ConstantBitrateQuality`, `VariableBitrateQuality`를 제외한 나머지는 optional한 구현 사항입니다.
-  (서버 / 클라이언트 구현체가 해당 품질 설정을 지원하지 않을 수 있습니다.)
+- `ConstantBitrateQuality`, `VariableBitrateQuality`를 제외한 품질 설정은 optional한 구현 사항입니다. 서버/클라이언트 구현체가 해당 품질 설정을 지원하지 않을 수 있습니다.
+- `options` 필드의 직렬화 형식은 `"key: 'value'; key2: 'value2'"` 패턴을 따르며, `!required` 접미사로 필수/선택 옵션을 구분합니다.
