@@ -1,0 +1,576 @@
+---
+syntax: "proto3"
+package: "sirius.msgdef.v1.channels.projection"
+import:
+  - "msgdef/common-types.proto"
+  - "msgdef/v1/channels/projection/projection_typedef.proto"
+---
+
+# ACCESSIBILITY
+
+Projection 채널에서 제공하는 액세시빌리티 관련 메시지 정의입니다.
+원격 호스트의 액세시빌리티 트리를 조회하고, 변경 이벤트를 구독하며, UI 요소에 대한 액션을 수행할 수 있습니다.
+
+액세시빌리티 기능은 시각·청각·운동 장애가 있는 사용자뿐 아니라, LLM 기반 AI 에이전트가 UI 요소를 구조적으로 이해하고 상호작용하는 데에도 활용될 수 있습니다.
+액세시빌리티 트리는 비디오 프레임을 직접 분석하는 것보다 효율적인 UI 해석 수단을 제공합니다.
+
+---
+
+# CONSTANTS
+
+## AccessibilityNodeRole
+
+```constset
+constset AccessibilityNodeRole: string {
+  /// 읽기 가능한 텍스트 요소.
+  /// 예: TextView (Android), Label (Windows), Text (macOS SwiftUI)
+  const text = "text";
+
+  /// 사용자가 입력할 수 있는 텍스트 필드 요소.
+  /// 예: EditText (Android), TextBox (Windows), TextField (macOS SwiftUI)
+  const textField = "textField";
+
+  /// 이미지 요소.
+  /// 예: ImageView (Android), PictureBox (Windows), Image (macOS SwiftUI)
+  const image = "image";
+
+  /// 버튼 요소.
+  /// 예: Button (Android), Button (Windows), Button (macOS SwiftUI)
+  const button = "button";
+
+  /// 토글 버튼 요소 (체크박스, 라디오 버튼 등).
+  /// 예: CheckBox, RadioButton (Android), CheckBox, RadioButton (Windows), Toggle (macOS SwiftUI)
+  const toggle = "toggle";
+
+  /// 슬라이더 요소.
+  /// 스크롤 뷰의 스크롤바도 슬라이더로 표현할 수 있습니다.
+  const slider = "slider";
+
+  /// 콤보 박스 요소 (드롭다운 메뉴 등).
+  /// 예: Spinner (Android), ComboBox (Windows), Picker (macOS SwiftUI)
+  const comboBox = "comboBox";
+
+  /// 리스트 요소 (리스트 뷰, 테이블 뷰 등).
+  /// 예: ListView, RecyclerView (Android), ListView, DataGrid (Windows), List (macOS SwiftUI)
+  const list = "list";
+
+  /// 탭 요소 (탭 레이아웃 등).
+  /// 예: TabLayout (Android), TabControl (Windows), TabView (macOS SwiftUI)
+  const tab = "tab";
+
+  /// 트리 요소 (트리 뷰 등).
+  /// 예: TreeView (Windows), OutlineGroup (macOS SwiftUI)
+  const tree = "tree";
+
+  /// 웹 DOM 요소. 하단 'REPRESENTING DOM ELEMENTS' 섹션 참조.
+  const domElement = "domElement";
+
+  /// 레이아웃 컨테이너 요소.
+  /// 예: LinearLayout, RelativeLayout (Android), StackPanel (Windows), VStack, HStack (macOS SwiftUI)
+  const layoutContainer = "layoutContainer";
+
+  /// 윈도우 요소.
+  const window = "window";
+
+  /// 개별 메뉴 아이템 요소.
+  const menuItem = "menuItem";
+
+  /// 메뉴 아이템의 논리적 그룹.
+  const menuGroup = "menuGroup";
+
+  /// 메뉴 컨테이너 요소.
+  const menu = "menu";
+
+  /// 애플리케이션 요소.
+  const application = "application";
+
+  /// 화면 디스플레이 요소.
+  const display = "display";
+
+  /// GUI 세션 요소.
+  const session = "session";
+}
+```
+
+## AccessibilityNodeHint
+
+```optionset
+optionset AccessibilityNodeHint: uint32 {
+  /// 이 노드는 상호작용이 비활성화되어 있습니다. (disabled)
+  option disabled = 0b1;
+
+  /// 이 노드는 현재 보이지 않습니다. (invisible)
+  option invisible = 0b10;
+
+  /// 이 노드는 클릭 가능합니다.
+  option clickable = 0b100;
+
+  /// 이 노드는 스크롤 가능합니다.
+  option scrollable = 0b1000;
+
+  /// 이 노드는 포커스 가능합니다.
+  option focusable = 0b10000;
+
+  /// 이 노드는 포커스되어 있습니다.
+  option focused = 0b100000;
+
+  /// 이 노드는 추가적인 컨텐츠를 가지고 있으며, 사용자가 상호작용할 때 확장될 수 있습니다.
+  option expandable = 0b1000000;
+
+  /// 이 노드는 확장되어 있습니다.
+  option expanded = 0b10000000;
+
+  /// 이 노드는 선택 가능합니다. (selectable)
+  option selectable = 0b100000000;
+
+  /// 이 노드는 선택되어 있습니다. (selected)
+  option selected = 0b1000000000;
+}
+```
+
+## AccessibilityUpdateType
+
+```optionset
+optionset AccessibilityUpdateType: uint32 {
+  /// 노드 속성(description, value, hint 등)이 변경됨
+  option propertyChanged = 0x0001;
+
+  /// 자식 노드가 추가/제거/재배치됨
+  option childrenChanged = 0x0002;
+
+  /// 노드가 트리에서 제거됨
+  option nodeRemoved = 0x0004;
+
+  /// 노드가 트리에 새로 추가됨
+  option nodeAdded = 0x0008;
+}
+```
+
+## GetAccessibilityTreeRequestFlags
+
+```optionset
+optionset GetAccessibilityTreeRequestFlags: uint32 {
+  /// 노드의 이미지 스냅샷을 포함합니다.
+  /// 스냅샷 생성은 서버 자원을 소모하므로 남용하지 마십시오.
+  /// 서버 구현체에 따라 이 플래그가 무시될 수 있습니다.
+  option includeSnapshots = 0x0001;
+}
+```
+
+## AccessibilityActionType
+
+```constset
+constset AccessibilityActionType: string {
+  /// 노드와 기본 상호작용을 행합니다.
+  /// 예를 들어, 버튼의 경우 클릭, 텍스트 필드의 경우 포커스, 메뉴 아이템은 선택 등이 될 수 있습니다.
+  const activate = "activate";
+
+  /// 노드와의 상호작용을 해제합니다.
+  /// 예를 들어, 토글 버튼이 켜진 상태에서 이 액션을 수행하면 꺼질 수 있습니다.
+  const deactivate = "deactivate";
+
+  /// 노드로부터 컨텍스트 메뉴를 열려고 시도합니다. 오른쪽 클릭과 유사한 동작입니다.
+  const contextMenu = "contextMenu";
+
+  /// 명시적으로 '클릭'을 수행합니다.
+  /// value: intval (optional) - 마우스 버튼 인덱스 (0: 왼쪽, 1: 오른쪽, 2: 가운데)
+  const click = "click";
+
+  /// 명시적으로 '더블 클릭'을 수행합니다.
+  /// value: intval (optional) - 마우스 버튼 인덱스 (0: 왼쪽, 1: 오른쪽, 2: 가운데)
+  const doubleClick = "doubleClick";
+
+  /// 명시적으로 '길게 누르기'를 수행합니다.
+  /// value: intval (optional) - 마우스 버튼 인덱스 (0: 왼쪽, 1: 오른쪽, 2: 가운데)
+  const longClick = "longClick";
+
+  /// 노드에 포커스를 맞춥니다.
+  const focus = "focus";
+
+  /// 노드에서 포커스를 제거합니다.
+  const blurFocus = "blurFocus";
+
+  /// 노드를 스크롤합니다.
+  /// args: "deltaX" (optional) - 수평 스크롤 양 (음수는 왼쪽, 양수는 오른쪽)
+  ///       "deltaY" (optional) - 수직 스크롤 양 (음수는 위, 양수는 아래)
+  const scroll = "scroll";
+
+  /// 노드의 하위 컨텐츠를 펼칩니다.
+  const expand = "expand";
+
+  /// 노드의 하위 컨텐츠를 접습니다.
+  const collapse = "collapse";
+
+  /// 노드의 값을 설정합니다.
+  /// 예를 들어, 텍스트 필드에 텍스트를 입력하거나, 슬라이더의 값을 변경하는 등의 동작이 될 수 있습니다.
+  const setValue = "setValue";
+}
+```
+
+---
+
+# STRUCTS
+
+## AccessibilityNodeValue
+
+```protobuf
+/// 액세시빌리티 노드의 값을 나타냅니다.
+message AccessibilityNodeValue {
+  oneof value {
+    string textValue = 1;
+    bool boolValue = 2;
+    int64 intValue = 3;
+    float floatValue = 4;
+  }
+}
+```
+
+## AccessibilityNodeSnapshot
+
+```protobuf
+/// 노드의 이미지 스냅샷입니다.
+message AccessibilityNodeSnapshot {
+  /// 이미지의 MIME 타입 (예: "image/png")
+  string mimeType = 1;
+  /// 이미지 데이터 (바이너리)
+  bytes data = 2;
+}
+```
+
+## AccessibilityNode
+
+```protobuf
+/// 액세시빌리티 트리의 노드를 나타냅니다.
+/// 각 노드는 고유한 ID를 가지며, 부모-자식 관계로 트리를 형성합니다.
+message AccessibilityNode {
+  /// 노드의 고유 ID
+  SRUUID id = 1;
+
+  /// 부모 노드의 ID. 루트 노드인 경우 생략됩니다.
+  optional SRUUID parentId = 2;
+
+  /// 노드의 역할
+  // @constset: AccessibilityNodeRole
+  string role = 3;
+
+  /// 노드의 상태 힌트
+  // @optionset: AccessibilityNodeHint
+  uint32 hint = 4;
+
+  /// 노드의 화면 상 위치와 크기 (윈도우 좌상단 기준, 픽셀 단위)
+  SRRect bounds = 5;
+
+  /// 노드 로컬 좌표계에서의 위치와 크기
+  optional SRRect localBounds = 6;
+
+  /// 사용자를 위한 노드 설명
+  string description = 7;
+
+  /// 노드의 값. 텍스트 요소의 경우 textValue, 토글의 경우 boolValue 등.
+  optional AccessibilityNodeValue value = 8;
+
+  /// 노드의 이미지 스냅샷. includeSnapshots 플래그가 설정된 경우에만 제공됩니다.
+  optional AccessibilityNodeSnapshot snapshot = 12;
+
+  /// HTML DOM 어트리뷰트 또는 GUI 시스템별 어트리뷰트.
+  /// 예: "dom.aria-label": "閉じる", "dom.disabled": "true"
+  map<string, string> attributes = 13;
+
+  /// 클라이언트에게 제공하기 위한 추가 메타데이터.
+  /// 구현체별 키는 reverse domain name 형식을 사용하십시오.
+  /// 예: "app.noctiluca.x-display-id": "1", "app.noctiluca.x-bundle-id": "com.leaves.shizuku"
+  map<string, string> metadata = 14;
+
+  /// 자식 노드 목록. 요청 시 생략될 수 있습니다.
+  repeated AccessibilityNode children = 15;
+}
+```
+
+### IMPLEMENTATION NOTES
+
+- `role`이 `AccessibilityNodeRole`에 정의되지 않은 값인 경우, reverse domain name 형식의 커스텀 역할로 처리합니다. 하단 'EXTENDING ROLES' 섹션을 참조하십시오.
+
+---
+
+# MESSAGES
+
+## GetAccessibilityTreeRequest
+
+```protobuf
+/// 액세시빌리티 트리를 요청합니다.
+// @opcode: 0x80E1
+message GetAccessibilityTreeRequest {
+  uint64 requestId = 1;
+
+  /// 액세시빌리티 트리를 가져올 노드의 ID.
+  /// 이 노드를 루트로 하는 서브트리가 반환됩니다.
+  /// 생략된 경우 현재 GUI 세션의 전체 액세시빌리티 트리가 반환됩니다.
+  optional SRUUID nodeId = 2;
+
+  // @optionset: GetAccessibilityTreeRequestFlags
+  uint32 flags = 16;
+}
+```
+
+### DESCRIPTION
+
+- 클라이언트가 서버에 액세시빌리티 트리를 요청할 때 사용하는 메시지입니다.
+- 서버는 `GetAccessibilityTreeResponse`로 응답합니다.
+
+### IMPLEMENTATION NOTES
+
+- 서버 구현체에 따라 전체 트리 요청이 거절될 수 있습니다. 보안상의 이유로 특정 노드나 윈도우에 대한 접근이 제한될 수 있습니다.
+
+## GetAccessibilityTreeResponse
+
+```protobuf
+/// 액세시빌리티 트리 요청에 대한 응답입니다.
+// @opcode: 0x80E2
+message GetAccessibilityTreeResponse {
+  uint64 requestId = 1;
+
+  /// 요청 처리 성공 여부. 거부된 경우 false.
+  bool success = 2;
+
+  /// 요청이 거절된 경우, 거절 원인에 대한 설명.
+  optional string errorMessage = 3;
+
+  /// 요청한 노드를 루트로 하는 액세시빌리티 트리.
+  /// success가 false인 경우 이 필드는 비어있을 수 있습니다.
+  optional AccessibilityNode rootNode = 4;
+}
+```
+
+### DESCRIPTION
+
+- `GetAccessibilityTreeRequest`에 대한 응답 메시지입니다.
+- `success`가 `false`인 경우 `rootNode`는 비어있을 수 있습니다.
+
+## SubscribeAccessibilityTreeUpdatesRequest
+
+```protobuf
+/// 액세시빌리티 트리 업데이트 이벤트의 구독을 요청합니다.
+// @opcode: 0x80E3
+message SubscribeAccessibilityTreeUpdatesRequest {
+  uint64 requestId = 1;
+
+  /// 구독할 서브트리의 루트 노드 ID.
+  /// 생략된 경우 현재 GUI 세션의 전체 트리에 대한 업데이트가 구독됩니다.
+  optional SRUUID nodeId = 2;
+
+  /// 구독할 이벤트 유형 마스크.
+  /// 0x0000인 경우 모든 이벤트 유형을 구독합니다.
+  // @optionset: AccessibilityUpdateType
+  uint32 eventMask = 3;
+
+  /// 구독할 서브트리의 최대 깊이.
+  /// 0인 경우 깊이 제한 없이 모든 하위 노드를 구독합니다.
+  /// N > 0인 경우 지정한 노드로부터 N단계까지의 하위 노드만 구독합니다.
+  uint32 maxDepth = 4;
+
+  // @optionset: GetAccessibilityTreeRequestFlags
+  uint32 flags = 16;
+}
+```
+
+### DESCRIPTION
+
+- 클라이언트가 액세시빌리티 트리의 변경 이벤트를 구독할 때 사용합니다.
+- `eventMask`를 통해 특정 유형의 이벤트만 필터링하여 구독할 수 있습니다.
+- `maxDepth`를 통해 구독 범위의 깊이를 제한할 수 있습니다.
+
+### IMPLEMENTATION NOTES
+
+- 서버 구현체에 따라 전체 트리에 대한 구독이 거절될 수 있습니다.
+- AI 에이전트 클라이언트의 경우 `maxDepth`와 `eventMask`를 적절히 설정하여 불필요한 이벤트 수신을 줄이는 것을 권장합니다.
+
+## SubscribeAccessibilityTreeUpdatesResponse
+
+```protobuf
+/// SubscribeAccessibilityTreeUpdatesRequest에 대한 응답 메시지입니다.
+// @opcode: 0x80E4
+message SubscribeAccessibilityTreeUpdatesResponse {
+  uint64 requestId = 1;
+
+  /// 구독 식별자. 이후 이벤트 수신 및 구독 해제에 사용됩니다.
+  SRUUID subscriptionId = 2;
+
+  /// 구독 설정 성공 여부. 거부된 경우 false.
+  bool success = 3;
+
+  /// 구독이 거절된 경우, 거절 원인에 대한 설명.
+  optional string errorMessage = 4;
+}
+```
+
+### DESCRIPTION
+
+- `SubscribeAccessibilityTreeUpdatesRequest`에 대한 응답 메시지입니다.
+- `subscriptionId`는 구독 해제(`UnsubscribeAccessibilityTreeUpdatesRequest`) 시 사용됩니다.
+
+## UnsubscribeAccessibilityTreeUpdatesRequest
+
+```protobuf
+/// 액세시빌리티 트리 업데이트 이벤트의 구독을 해제합니다.
+// @opcode: 0x80E5
+message UnsubscribeAccessibilityTreeUpdatesRequest {
+  uint64 requestId = 1;
+
+  /// 해제할 구독의 식별자.
+  SRUUID subscriptionId = 2;
+}
+```
+
+### DESCRIPTION
+
+- 이전에 등록한 액세시빌리티 트리 업데이트 구독을 해제하는 메시지입니다.
+
+## UnsubscribeAccessibilityTreeUpdatesResponse
+
+```protobuf
+/// UnsubscribeAccessibilityTreeUpdatesRequest에 대한 응답 메시지입니다.
+// @opcode: 0x80E6
+message UnsubscribeAccessibilityTreeUpdatesResponse {
+  uint64 requestId = 1;
+
+  /// 해제된 구독의 식별자.
+  SRUUID subscriptionId = 2;
+
+  /// 구독 해제 성공 여부.
+  bool isSuccess = 3;
+}
+```
+
+### DESCRIPTION
+
+- `UnsubscribeAccessibilityTreeUpdatesRequest`에 대한 응답 메시지입니다.
+
+## AccessibilityTreeUpdateEvent
+
+```protobuf
+/// 액세시빌리티 트리 변경 이벤트.
+// @opcode: 0x80E7
+message AccessibilityTreeUpdateEvent {
+  /// 구독 식별자.
+  SRUUID subscriptionId = 1;
+
+  /// 이벤트 유형 코드.
+  // @optionset: AccessibilityUpdateType
+  uint32 eventType = 2;
+
+  /// 이벤트 대상 노드의 ID.
+  SRUUID nodeId = 3;
+
+  /// 업데이트된 노드 정보. nodeRemoved 이벤트의 경우 이 필드는 생략됩니다.
+  optional AccessibilityNode updatedNode = 4;
+}
+```
+
+### DESCRIPTION
+
+- 구독 중인 클라이언트에게 액세시빌리티 트리의 변경을 알릴 때 전송되는 이벤트입니다.
+- `SubscribeAccessibilityTreeUpdatesRequest`로 구독한 이후에만 수신됩니다.
+
+### IMPLEMENTATION NOTES
+
+- `nodeRemoved` 이벤트의 경우 `updatedNode`는 생략되며, `nodeId`만으로 삭제된 노드를 식별합니다.
+- `nodeAdded` 및 `propertyChanged` 이벤트의 경우 `updatedNode`에 변경 후의 노드 상태가 포함됩니다.
+- `childrenChanged` 이벤트의 경우 `updatedNode`에 자식 목록이 갱신된 부모 노드가 포함됩니다.
+
+## DispatchActionRequest
+
+```protobuf
+/// 액세시빌리티 노드에 대한 액션 수행을 요청합니다.
+// @opcode: 0x80E8
+message DispatchActionRequest {
+  uint64 requestId = 1;
+
+  /// 액션을 수행할 노드의 ID. (AccessibilityNode.id)
+  SRUUID targetNodeId = 2;
+
+  /// 수행할 액션의 종류.
+  // @constset: AccessibilityActionType
+  string actionType = 3;
+
+  /// 액션에 필요한 추가 값. 예: 텍스트 입력 시 textValue, 클릭 시 버튼 인덱스 등.
+  optional AccessibilityNodeValue value = 4;
+
+  /// 액션에 필요한 추가 인자. 예: scroll 액션의 "deltaX", "deltaY" 등.
+  map<string, string> args = 5;
+}
+```
+
+### DESCRIPTION
+
+- 클라이언트가 서버에 특정 UI 노드에 대한 액션 수행을 요청할 때 사용하는 메시지입니다.
+- 서버는 `DispatchActionResponse`로 응답합니다.
+
+## DispatchActionResponse
+
+```protobuf
+/// DispatchActionRequest에 대한 응답 메시지입니다.
+// @opcode: 0x80E9
+message DispatchActionResponse {
+  uint64 requestId = 1;
+
+  /// 액션 수행 성공 여부.
+  bool success = 2;
+
+  /// 액션이 실패한 경우, 실패 원인에 대한 설명.
+  optional string errorMessage = 3;
+}
+```
+
+### DESCRIPTION
+
+- `DispatchActionRequest`에 대한 응답 메시지입니다.
+- `success`가 `false`인 경우 `errorMessage`에 실패 원인이 포함될 수 있습니다.
+
+---
+
+# REPRESENTING DOM ELEMENTS
+
+웹 브라우저의 DOM 요소를 `AccessibilityNode`로 표현할 때, `role`을 `domElement`로 설정하고
+DOM 어트리뷰트를 `attributes` 맵에 `dom.` 접두사를 붙여 저장합니다.
+
+예를 들어, `<button aria-label="閉じる" disabled>閉じる</button>`는 다음과 같이 표현됩니다:
+
+```
+attributes: {
+  "dom.aria-label": "閉じる",
+  "dom.disabled": "true"
+}
+```
+
+---
+
+# EXTENDING ROLES
+
+`AccessibilityNodeRole`에 정의되지 않은 역할이 필요한 경우, reverse domain name 형식의 문자열을 사용하여 커스텀 역할을 정의할 수 있습니다.
+
+예: `com.leaves.shizuku.GameRendererView` — 텍스트 어드벤처 게임의 게임 화면을 렌더링하는 뷰.
+
+```
+AccessibilityNode {
+    id: "...",
+    parentId: null,
+
+    role: "com.leaves.shizuku.GameRendererView",
+
+    description: "학교 옥상. 저녁 시간이 다가오고 있어 노을이 지고 있다. 츠키야마 시즈쿠라고 이름을 밝힌 소녀는 옥상에 서서 노을을 바라보고 있다.",
+    children: [
+        {
+            role: "text",
+            description: "시즈쿠는 노을을 바라보고 있다. 어째서인지 노을을 바라보는 시즈쿠의 모습이 슬퍼 보인다. 나는...",
+        },
+        {
+            role: "button",
+            description: "A: 시즈쿠에게 '이제 돌아가자'라고 말한다.",
+        },
+        {
+            role: "button",
+            description: "B: 아무 것도 하지 못한 채 가만히 시즈쿠를 바라보았다.",
+        }
+    ]
+}
+```
