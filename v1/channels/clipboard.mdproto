@@ -45,7 +45,7 @@ message ClipboardData {
   optional bytes data = 3;
 
   // @optionset: ClipboardDataFlags
-  uint32 flags = 16;
+  uint32 flags = 15;
 }
 ```
 
@@ -83,7 +83,7 @@ message ClipboardItem {
 // @opcode: 0x8001
 message SubscribeClipboardRequest {
   uint64 requestId = 1;
-  uint32 flags = 16; // reserved
+  uint32 flags = 15; // reserved
 }
 ```
 
