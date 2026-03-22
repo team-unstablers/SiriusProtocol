@@ -255,9 +255,12 @@ message WindowInfo {
   uint32 role = 7;
 
   SRRect bounds = 8;
-
+  
   /// 이 윈도우의 아이콘 해시값.
   optional fixed64 iconHash = 9;
+
+  optional uint64 parentWindowId = 10;
+  
   /// 이 윈도우의 섬네일 이미지 (PNG8 (with alpha channel) 형식, aspect ratio 유지, 최대 512x512)
   optional bytes thumbnail = 12;
 
@@ -266,10 +269,6 @@ message WindowInfo {
   /// 모든 키가 항상 제공되는 것도 아닙니다.
   /// 구현체-specific 메타데이터 키는 reversed domain name 형식을 따르십시오.
   /// (예: "com.contoso.superremote.virtual-display-purpose" 등)
-  /// @key "related-display-id": 이 디스플레이가 다른 디스플레이의 미러링을 수행하고 있는 경우,
-  ///       그 원본 디스플레이 ID를 나타냅니다.
-  /// @key "connection-type": 디스플레이 연결 유형
-  ///       (예: "HDMI", "DisplayPort", "USB-C", "Wireless" 등)
   map<string, string> metadata = 13;
 
   /// 윈도우 힌트
@@ -298,7 +297,7 @@ message WindowListRequest {
 
   /// 윈도우 목록 요청 플래그
   // @optionset: WindowListRequestFlags
-  uint32 flags = 16;
+  uint32 flags = 15;
 }
 ```
 
