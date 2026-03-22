@@ -1,0 +1,505 @@
+---
+syntax: "proto3"
+package: "sirius.msgdef.v1.channels.projection"
+import:
+  - "msgdef/common-types.proto"
+  - "msgdef/v1/channels/projection/projection_typedef.proto"
+  - "msgdef/v1/channels/projection/winman_query.proto"
+---
+
+# APP MANAGEMENT
+
+앱 실행, 종료, 포그라운드/백그라운드 전환 등 애플리케이션 관리 및 앱 단위 스트리밍 (AppStream) 기능을 위한 메시지 정의입니다.
+
+AppStream은 Microsoft RemoteApp과 유사하게, 전체 디스플레이가 아닌 특정 애플리케이션의 개별 윈도우를 클라이언트에 스트리밍하는 기능입니다.
+AppStream은 오케스트레이션 레이어로서, 실제 비디오 스트리밍은 기존 `ProjectionRequest(.singleWindow)` 파이프라인을 재사용합니다.
+
+---
+
+# CONSTANTS
+
+## ApplicationEventType
+
+```optionset
+optionset ApplicationEventType: uint32 {
+    /// 애플리케이션이 실행되었습니다.
+    option launched = 0x1;
+
+    /// 애플리케이션이 종료되었습니다.
+    option terminated = 0x2;
+
+    /// 애플리케이션이 포커스를 얻었습니다.
+    option focused = 0x4;
+
+    /// 애플리케이션이 포커스를 잃었습니다.
+    option unfocused = 0x8;
+
+    /// 애플리케이션이 새 윈도우를 생성했습니다.
+    option windowCreated = 0x10;
+
+    /// 애플리케이션이 윈도우를 닫았습니다.
+    option windowClosed = 0x20;
+}
+```
+
+## ApplicationListRequestFlags
+
+```optionset
+optionset ApplicationListRequestFlags: uint32 {
+  /// 애플리케이션 목록에 각 애플리케이션의 아이콘을 포함합니다.
+  option includeIcons = 0x1;
+
+  /// 실행 중인 애플리케이션 목록만 요청합니다.
+  option runningOnly = 0x2;
+}
+```
+
+## ApplicationState
+
+```constset
+constset ApplicationState: uint32 {
+  /// 애플리케이션이 실행 중이지 않습니다.
+  const notRunning = 0;
+
+  /// 애플리케이션이 실행 중이며, 현재 포그라운드에 있습니다.
+  /// NOTE: 이 상태는 일반 데스크톱 환경에서는 사용되지 않을 수 있습니다.
+  /// Android와 같은 모바일 타겟의 OS에서 주로 사용될 것으로 보입니다.
+  const foreground = 1;
+
+  /// 애플리케이션이 실행 중이며, 현재 백그라운드에 있습니다.
+  const background = 2;
+}
+```
+
+## AppStreamFlags
+
+```optionset
+optionset AppStreamFlags: uint32 {
+  /// 보이지 않는 윈도우 (isHidden, alpha ≈ 0 등)를 무시합니다.
+  /// 이 플래그가 설정되면 AppStreamWindowEvent에서 보이지 않는 윈도우에 대한
+  /// appeared/disappeared 이벤트가 발생하지 않습니다.
+  option ignoreInvisibleWindows = 0x1;
+
+  /// AppStream 세션이 활성 상태인 동안, 포커스를 뺏어갈 수 있는 시스템 단축키
+  /// (예: ⌘+Tab)를 무시하도록 서버에 요청합니다.
+  /// 서버 구현체에 따라 지원되지 않을 수 있습니다.
+  option disableSystemShortcuts = 0x2;
+}
+```
+
+## AppStreamWindowEventType
+
+```constset
+constset AppStreamWindowEventType: uint32 {
+  /// 새로운 윈도우가 나타났습니다.
+  /// 클라이언트는 이 이벤트를 수신한 후, 해당 윈도우에 대한 ProjectionRequest를 전송하여
+  /// 개별 윈도우 스트리밍을 시작할 수 있습니다.
+  const appeared = 0;
+
+  /// 윈도우가 사라졌습니다 (닫힘).
+  /// 해당 윈도우에 대한 활성 ProjectionSession이 있는 경우,
+  /// 서버가 별도로 ProjectionSessionEndedEvent를 전송합니다.
+  const disappeared = 1;
+
+  /// 윈도우의 메타데이터(타이틀, 위치, 크기 등)가 변경되었습니다.
+  const updated = 2;
+}
+```
+
+---
+
+# STRUCTS
+
+## ApplicationInfo
+
+```protobuf
+message ApplicationInfo {
+  /// 애플리케이션의 고유 식별자 (예: 패키지명, 번들 ID 등)
+  string bundleId = 1;
+  /// 애플리케이션의 표시 이름
+  string displayName = 2;
+
+  /// 애플리케이션의 현재 상태 (실행 중, 포그라운드, 백그라운드 등)
+  // @constset: ApplicationState
+  uint32 state = 3;
+
+  /// 이 애플리케이션이 가지고 있는 윈도우 정보 목록
+  repeated WindowInfo windows = 11;
+
+  /// 앱 아이콘 (PNG8 (with alpha channel) 형식, 최대 256x256@1x 픽셀)
+  optional bytes icon = 12;
+
+  /// 추가 메타데이터
+  /// 모든 메타데이터 키는 optional입니다. 모든 서버 구현체가 이를 반드시 지원한다는 보장은 없고,
+  /// 모든 키가 항상 제공되는 것도 아닙니다.
+  /// 구현체-specific 메타데이터 키는 reversed domain name 형식을 따르십시오.
+  /// (예: "com.contoso.superremote.virtual-display-purpose" 등)
+  map<string, string> metadata = 13;
+
+  uint32 hints = 14;
+  uint32 flags = 15;
+}
+```
+
+---
+
+# MESSAGES
+
+## ApplicationListRequest
+
+```protobuf
+/// 애플리케이션 목록을 요청합니다.
+// @opcode: 0x80E1
+message ApplicationListRequest {
+  uint64 requestId = 1;
+
+  /// 애플리케이션 목록에 포함할 정보의 종류를 지정하는 비트마스크입니다.
+  // @optionset: ApplicationListRequestFlags
+  uint32 flags = 15;
+}
+```
+
+### DESCRIPTION
+
+클라이언트가 서버에 실행 중인 애플리케이션 목록을 요청할 때 사용합니다.
+`runningOnly` 플래그를 설정하면 실행 중인 앱만 반환되며, `includeIcons`를 설정하면 각 앱의 아이콘 데이터가 포함됩니다.
+서버는 `ApplicationListResponse`로 응답합니다.
+
+## ApplicationListResponse
+
+```protobuf
+/// 애플리케이션 목록 요청에 대한 응답입니다.
+// @opcode: 0x80E2
+message ApplicationListResponse {
+  uint64 requestId = 1;
+  repeated ApplicationInfo applications = 2;
+
+  /// 페이지네이션 된 결과의 마지막 페이지인지 여부
+  bool isLastPage = 3;
+}
+```
+
+### DESCRIPTION
+
+`ApplicationListRequest`에 대한 응답 메시지입니다.
+`applications`에 조건에 맞는 애플리케이션 정보 목록이 포함됩니다.
+
+## ApplicationLaunchRequest
+
+```protobuf
+/// 서버에게 특정 애플리케이션의 실행을 요청합니다.
+// @opcode: 0x80E3
+message ApplicationLaunchRequest {
+  uint64 requestId = 1;
+
+  /// 실행할 애플리케이션의 번들 ID
+  string bundleId = 2;
+
+  /// 실행 시 전달할 인자 목록 (선택)
+  repeated string arguments = 3;
+}
+```
+
+### DESCRIPTION
+
+클라이언트가 서버에게 특정 애플리케이션의 실행을 요청할 때 사용합니다.
+서버는 보안 정책(allowedApps 등)에 따라 요청을 거부할 수 있습니다.
+
+### IMPLEMENTATION NOTES
+
+- 서버는 `allowedApps` 설정 목록에 포함된 앱만 실행을 허용해야 합니다.
+- 이미 실행 중인 앱에 대한 요청은 해당 앱을 포그라운드로 가져오는 것으로 처리할 수 있습니다.
+
+## ApplicationLaunchResponse
+
+```protobuf
+/// 애플리케이션 실행 요청에 대한 응답입니다.
+// @opcode: 0x80E4
+message ApplicationLaunchResponse {
+  uint64 requestId = 1;
+  bool isSuccess = 2;
+
+  uint32 code = 3;
+  optional string message = 4;
+}
+```
+
+### DESCRIPTION
+
+`ApplicationLaunchRequest`에 대한 응답 메시지입니다.
+`isSuccess`가 `false`인 경우, `code`와 `message`를 통해 실패 사유를 확인할 수 있습니다.
+
+## ApplicationTerminateRequest
+
+```protobuf
+/// 서버에게 특정 애플리케이션의 종료를 요청합니다.
+// @opcode: 0x80E5
+message ApplicationTerminateRequest {
+  uint64 requestId = 1;
+
+  /// 종료할 애플리케이션의 번들 ID
+  string bundleId = 2;
+
+  /// 강제 종료 여부
+  /// true로 설정하면 저장되지 않은 데이터가 유실될 수 있습니다.
+  bool force = 3;
+}
+```
+
+### DESCRIPTION
+
+클라이언트가 서버에게 특정 애플리케이션의 종료를 요청할 때 사용합니다.
+`force`가 `false`인 경우, 앱이 저장 확인 대화상자를 표시할 수 있어 즉시 종료되지 않을 수 있습니다.
+
+## ApplicationTerminateResponse
+
+```protobuf
+/// 애플리케이션 종료 요청에 대한 응답입니다.
+// @opcode: 0x80E6
+message ApplicationTerminateResponse {
+  uint64 requestId = 1;
+  bool isSuccess = 2;
+
+  uint32 code = 3;
+  optional string message = 4;
+}
+```
+
+### DESCRIPTION
+
+`ApplicationTerminateRequest`에 대한 응답 메시지입니다.
+
+## SubscribeApplicationEventsRequest
+
+```protobuf
+/// 애플리케이션 상태 변경 이벤트를 구독합니다.
+// @opcode: 0x80E7
+message SubscribeApplicationEventsRequest {
+  uint64 requestId = 1;
+
+  /// 구독할 이벤트 유형의 비트마스크.
+  /// 0x0000인 경우 모든 이벤트를 구독합니다.
+  // @optionset: ApplicationEventType
+  uint32 eventMask = 2;
+
+  /// 특정 앱만 필터링할 번들 ID (비어있으면 모든 앱)
+  optional string bundleIdFilter = 3;
+}
+```
+
+### DESCRIPTION
+
+클라이언트가 애플리케이션의 상태 변경(실행, 종료, 포커스 변경 등) 이벤트를 구독할 때 사용합니다.
+`bundleIdFilter`를 지정하면 해당 앱에 대한 이벤트만 수신합니다.
+
+## SubscribeApplicationEventsResponse
+
+```protobuf
+/// 애플리케이션 이벤트 구독 요청에 대한 응답입니다.
+// @opcode: 0x80E8
+message SubscribeApplicationEventsResponse {
+  uint64 requestId = 1;
+
+  /// 구독 식별자. 구독 해제 시 사용됩니다.
+  SRUUID subscriptionId = 2;
+}
+```
+
+### DESCRIPTION
+
+`SubscribeApplicationEventsRequest`에 대한 응답 메시지입니다.
+
+## UnsubscribeApplicationEventsRequest
+
+```protobuf
+/// 애플리케이션 이벤트 구독을 해제합니다.
+// @opcode: 0x80E9
+message UnsubscribeApplicationEventsRequest {
+  uint64 requestId = 1;
+
+  /// 구독 식별자
+  SRUUID subscriptionId = 2;
+}
+```
+
+### DESCRIPTION
+
+클라이언트가 기존 애플리케이션 이벤트 구독을 해제할 때 사용합니다.
+
+## UnsubscribeApplicationEventsResponse
+
+```protobuf
+/// 애플리케이션 이벤트 구독 해제 요청에 대한 응답입니다.
+// @opcode: 0x80EA
+message UnsubscribeApplicationEventsResponse {
+  uint64 requestId = 1;
+
+  /// 구독 식별자
+  SRUUID subscriptionId = 2;
+
+  /// 구독 해제 성공 여부
+  bool isSuccess = 3;
+}
+```
+
+### DESCRIPTION
+
+`UnsubscribeApplicationEventsRequest`에 대한 응답 메시지입니다.
+
+## ApplicationChangedEvent
+
+```protobuf
+/// 애플리케이션 상태 변경 이벤트입니다.
+// @opcode: 0x80EB
+message ApplicationChangedEvent {
+  /// 이벤트 유형 코드
+  // @optionset: ApplicationEventType
+  uint32 eventType = 1;
+
+  /// 변경된 애플리케이션 정보
+  /// `terminated` 이벤트의 경우 일부 필드만 채워질 수 있습니다.
+  ApplicationInfo info = 2;
+}
+```
+
+### DESCRIPTION
+
+서버가 구독 중인 클라이언트에게 애플리케이션 상태 변경을 알릴 때 전송하는 이벤트입니다.
+
+## StartAppStreamRequest
+
+```protobuf
+/// 특정 애플리케이션에 대한 AppStream 세션을 시작합니다.
+/// AppStream 세션이 시작되면, 서버는 대상 앱의 윈도우를 모니터링하고
+/// 윈도우 생성/제거/변경 이벤트를 AppStreamWindowEvent로 클라이언트에 전달합니다.
+/// 실제 비디오 스트리밍은 클라이언트가 각 윈도우에 대해
+/// ProjectionRequest(singleWindow)를 별도로 전송하여 시작해야 합니다.
+// @opcode: 0x80F1
+message StartAppStreamRequest {
+  uint64 requestId = 1;
+
+  /// 스트리밍할 애플리케이션의 번들 ID
+  string bundleId = 2;
+
+  /// AppStream 동작 플래그
+  // @optionset: AppStreamFlags
+  uint32 flags = 15;
+}
+```
+
+### DESCRIPTION
+
+클라이언트가 특정 애플리케이션의 개별 윈도우 스트리밍(AppStream)을 시작할 때 사용합니다.
+서버는 보안 정책을 확인한 후, 대상 앱의 윈도우 모니터링을 시작하고 `StartAppStreamResponse`로 응답합니다.
+
+### IMPLEMENTATION NOTES
+
+- 서버는 `allowedApps` 설정에 포함된 앱만 AppStream을 허용해야 합니다.
+- 대상 앱이 실행 중이지 않은 경우, 서버는 앱을 자동으로 실행하거나 실패 응답을 반환할 수 있습니다.
+- 하나의 프로젝션 채널에서 동시에 활성화할 수 있는 AppStream 세션 수는 서버 구현체에 따라 제한될 수 있습니다.
+
+## StartAppStreamResponse
+
+```protobuf
+/// AppStream 세션 시작 요청에 대한 응답입니다.
+// @opcode: 0x80F2
+message StartAppStreamResponse {
+  uint64 requestId = 1;
+
+  /// AppStream 세션 식별자.
+  /// 이후 StopAppStreamRequest 및 AppStreamWindowEvent에서 이 세션을 식별하는 데 사용됩니다.
+  SRUUID streamId = 2;
+
+  bool isSuccess = 3;
+
+  uint32 code = 4;
+  optional string message = 5;
+
+  /// 세션 시작 시점에 이미 존재하는 대상 앱의 윈도우 목록.
+  /// 클라이언트는 이 목록을 기반으로 초기 ProjectionRequest를 전송할 수 있습니다.
+  repeated WindowInfo initialWindows = 11;
+}
+```
+
+### DESCRIPTION
+
+`StartAppStreamRequest`에 대한 응답 메시지입니다.
+`isSuccess`가 `true`인 경우, `streamId`와 `initialWindows`가 유효합니다.
+`initialWindows`에는 세션 시작 시점에 대상 앱이 이미 가지고 있는 윈도우 정보가 포함됩니다.
+
+## StopAppStreamRequest
+
+```protobuf
+/// AppStream 세션을 종료합니다.
+// @opcode: 0x80F3
+message StopAppStreamRequest {
+  uint64 requestId = 1;
+
+  /// 종료할 AppStream 세션 식별자
+  SRUUID streamId = 2;
+}
+```
+
+### DESCRIPTION
+
+클라이언트가 활성 AppStream 세션을 종료할 때 사용합니다.
+세션이 종료되면 서버는 더 이상 해당 앱의 윈도우 이벤트를 전송하지 않습니다.
+활성 상태인 개별 윈도우의 ProjectionSession은 별도로 종료해야 합니다.
+
+## StopAppStreamResponse
+
+```protobuf
+/// AppStream 세션 종료 요청에 대한 응답입니다.
+// @opcode: 0x80F4
+message StopAppStreamResponse {
+  uint64 requestId = 1;
+  bool isSuccess = 2;
+}
+```
+
+### DESCRIPTION
+
+`StopAppStreamRequest`에 대한 응답 메시지입니다.
+
+## AppStreamWindowEvent
+
+```protobuf
+/// AppStream 세션 내에서 윈도우 상태가 변경되었음을 알리는 이벤트입니다.
+// @opcode: 0x80F5
+message AppStreamWindowEvent {
+  /// 이 이벤트가 속한 AppStream 세션 식별자
+  SRUUID streamId = 1;
+
+  /// 이벤트 유형
+  // @constset: AppStreamWindowEventType
+  uint32 eventType = 2;
+
+  /// 대상 윈도우 ID
+  uint64 windowId = 3;
+
+  /// 윈도우 정보 (appeared, updated 이벤트에서 제공)
+  /// disappeared 이벤트에서는 비어있을 수 있습니다.
+  optional WindowInfo info = 4;
+}
+```
+
+### DESCRIPTION
+
+서버가 AppStream 세션에 구독된 클라이언트에게 윈도우 상태 변경을 알릴 때 전송하는 이벤트입니다.
+
+- `appeared`: 새 윈도우가 생성됨. 클라이언트는 `ProjectionRequest(singleWindow)` 전송으로 스트리밍 시작 가능.
+- `disappeared`: 윈도우가 닫힘. 해당 윈도우의 활성 ProjectionSession은 서버가 자동으로 `ProjectionSessionEndedEvent`를 전송합니다.
+- `updated`: 윈도우의 메타데이터(타이틀, 위치, 크기 등) 변경. 클라이언트 UI 갱신 용도.
+
+---
+
+# APPSTREAM PROTOCOL FLOW
+
+AppStream의 전체적인 프로토콜 흐름은 다음과 같습니다.
+
+1. 클라이언트는 `ApplicationListRequest`로 실행 중인 애플리케이션 목록을 조회합니다.
+2. 사용자가 스트리밍할 앱을 선택하면, `StartAppStreamRequest`를 전송합니다.
+3. 서버는 보안 정책을 확인한 후, 대상 앱의 윈도우 모니터링을 시작하고 `StartAppStreamResponse`로 초기 윈도우 목록을 반환합니다.
+4. 클라이언트는 `initialWindows` 및 이후 수신되는 `AppStreamWindowEvent(appeared)`를 기반으로, 원하는 윈도우에 대해 `ProjectionRequest(viewport: singleWindow(windowId))`를 전송하여 개별 윈도우 스트리밍을 시작합니다.
+5. 윈도우가 닫히면 서버는 `AppStreamWindowEvent(disappeared)`와 함께 해당 윈도우의 `ProjectionSessionEndedEvent`를 전송합니다.
+6. 클라이언트가 `StopAppStreamRequest`를 전송하면, 서버는 앱 모니터링을 중지합니다. 활성 ProjectionSession은 클라이언트가 `StopProjectionRequest`로 별도 종료하거나, 서버가 일괄 종료할 수 있습니다.
