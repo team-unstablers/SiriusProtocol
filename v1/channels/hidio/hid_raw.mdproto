@@ -52,7 +52,4 @@ message RawEvent {
   - struct 내부의 모든 필드는 little-endian 형식이어야 합니다.
   - float 형식이 포함되는 경우 IEEE 754 표준을 따라야 합니다.
   - `__attribute__((packed))` 지시자를 사용하여 패딩이 없도록 해야 합니다.
-- 펜 태블릿 이벤트 예시:
-  - `type=0x01` (ScreenMapEvent): `param1`=xMin, `param2`=xMax, `param3`=yMin, `param4`=yMax (모두 float32)
-  - `type=0x02` (PenEvent): `param1`=x(float32), `param2`=y(float32), `param3`=pressure[0:15]+button[16:23]+tiltMode[24:31], `param4`=tiltX[0:15]+tiltY[16:31]
-- 현재 RawEvent는 서버 측에서 아직 구현되지 않았습니다.
+- Noctiluca 제품군에서는 RawEvent를 서버에서 직접 처리할 예정은 없으며, 플러그인 인터페이스로써 제공할 예정입니다.
