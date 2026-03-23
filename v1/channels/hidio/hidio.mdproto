@@ -5,6 +5,7 @@ import:
   - "msgdef/common-types.proto"
   - "msgdef/v1/channels/hidio/hid_keyboard.proto"
   - "msgdef/v1/channels/hidio/hid_mouse.proto"
+  - "msgdef/v1/channels/hidio/hid_pen.proto"
   - "msgdef/v1/channels/hidio/hid_raw.proto"
 ---
 
@@ -30,6 +31,12 @@ message HIDEvent {
     MouseMoveEvent mouseMoveEvent = 6;
     MouseButtonEvent mouseButtonEvent = 7;
     MouseWheelEvent mouseWheelEvent = 8;
+    
+    PenSetupEvent penSetupEvent = 17;
+    PenDestroyEvent penDestroyEvent = 18;
+    PenProximityEvent penProximityEvent = 19;
+    PenMoveEvent penMoveEvent = 20;
+    PenButtonEvent penButtonEvent = 21;
   }
 }
 ```
