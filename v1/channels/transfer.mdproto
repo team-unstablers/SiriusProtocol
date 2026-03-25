@@ -54,9 +54,6 @@ message TransferStartNotification {
   
   /// 전송할 데이터의 설명 (예: 클립보드 데이터 설명 등)
   string description = 4;
-  
-  /// 선택적 무결성 검증에 사용
-  bytes sha256sum = 5;
 }
 ```
 
