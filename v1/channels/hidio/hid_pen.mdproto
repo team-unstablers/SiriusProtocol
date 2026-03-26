@@ -2,8 +2,8 @@
 syntax: "proto3"
 package: "sirius.msgdef.v1.channels.hidio"
 import:
-  - "msgdef/common-types.proto"
-  - "msgdef/v1/channels/hidio/hid_mouse.proto"
+  - "common-types.proto"
+  - "v1/channels/hidio/hid_mouse.proto"
 ---
 
 # PEN MESSAGES

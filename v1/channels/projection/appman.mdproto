@@ -2,9 +2,9 @@
 syntax: "proto3"
 package: "sirius.msgdef.v1.channels.projection"
 import:
-  - "msgdef/common-types.proto"
-  - "msgdef/v1/channels/projection/projection_typedef.proto"
-  - "msgdef/v1/channels/projection/winman_query.proto"
+  - "common-types.proto"
+  - "v1/channels/projection/projection_typedef.proto"
+  - "v1/channels/projection/winman_query.proto"
 ---
 
 # APP MANAGEMENT

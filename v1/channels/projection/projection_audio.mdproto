@@ -2,7 +2,7 @@
 syntax: "proto3"
 package: "sirius.msgdef.v1.channels.projection"
 import:
-  - "msgdef/common-types.proto"
+  - "common-types.proto"
 ---
 
 # PROJECTION AUDIO MESSAGES

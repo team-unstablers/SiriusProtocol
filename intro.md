@@ -134,7 +134,7 @@ The transport layer used by Sirius SHOULD support multiplexing.
   When starting a channel, the initiator MUST inform the remote peer **which feature the channel is for**.
 - When a channel is closed, the associated stream is also terminated.
 
-Detailed message definitions and state transitions are defined in `msgdef/v1/channels.proto`.
+Detailed message definitions and state transitions are defined in `v1/channels.proto`.
 
 ### MAIN CHANNEL
 
@@ -159,10 +159,10 @@ fatal error), the transport connection is generally terminated as well.
 
 All messages in the Sirius protocol are defined using **Protocol Buffers v3**.
 
-- Common messages and main channel messages: `msgdef/general.proto`
-- Session management and authentication messages: `msgdef/v1/session.proto`
-- Channel start/close messages: `msgdef/v1/channels.proto`
-- Feature-specific channel messages: `msgdef/v1/channels/**.proto`
+- Common messages and main channel messages: `general.proto`
+- Session management and authentication messages: `v1/session.proto`
+- Channel start/close messages: `v1/channels.proto`
+- Feature-specific channel messages: `v1/channels/**.proto`
   - Examples: HIDIO, Projection, Window Management, etc.
 
 Each message is assigned an opcode. Framing rules are defined in the **OPCODES** and
@@ -336,7 +336,7 @@ transport.close()
 
 The `supportedFeatures` field contains identifiers for the features provided by the server.
 In the actual message definition, feature identifiers are represented as UUIDs
-(see `msgdef/general.proto`). At the application level, these may be wrapped as enums
+(see `general.proto`). At the application level, these may be wrapped as enums
 such as `.hidio`, `.projection`, etc.
 
 ## 4. User Authentication
@@ -355,7 +355,7 @@ mainChannel.send(AuthChallenge(
 ```
 
 `acceptedMethods` may include the following values.
-See `msgdef/v1/session.proto` for the specific enum definition.
+See `v1/session.proto` for the specific enum definition.
 
 - `AUTH_METHOD_NONE`
 - `AUTH_METHOD_PASSWORD`

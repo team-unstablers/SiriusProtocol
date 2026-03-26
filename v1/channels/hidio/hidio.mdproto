@@ -2,11 +2,11 @@
 syntax: "proto3"
 package: "sirius.msgdef.v1.channels.hidio"
 import:
-  - "msgdef/common-types.proto"
-  - "msgdef/v1/channels/hidio/hid_keyboard.proto"
-  - "msgdef/v1/channels/hidio/hid_mouse.proto"
-  - "msgdef/v1/channels/hidio/hid_pen.proto"
-  - "msgdef/v1/channels/hidio/hid_raw.proto"
+  - "common-types.proto"
+  - "v1/channels/hidio/hid_keyboard.proto"
+  - "v1/channels/hidio/hid_mouse.proto"
+  - "v1/channels/hidio/hid_pen.proto"
+  - "v1/channels/hidio/hid_raw.proto"
 ---
 
 # HIDIO CHANNEL MESSAGES

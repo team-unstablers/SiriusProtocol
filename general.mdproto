@@ -2,7 +2,7 @@
 syntax: "proto3"
 package: "sirius.msgdef"
 import:
-  - "msgdef/common-types.proto"
+  - "common-types.proto"
 ---
 
 # GENERAL MESSAGE DEFINITIONS

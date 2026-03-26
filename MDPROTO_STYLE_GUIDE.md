@@ -1,6 +1,6 @@
 # MDProto Style Guide
 
-This document defines the authoring rules for `.mdproto` files in the `msgdef/` directory.
+This document defines the authoring rules for `.mdproto` files in this repo.
 
 ---
 
@@ -158,7 +158,7 @@ Below is a complete file example that conforms to this style guide.
 syntax: "proto3"
 package: "sirius.msgdef.v1.channels.example"
 import:
-  - "msgdef/common-types.proto"
+  - "common-types.proto"
 ---
 
 # EXAMPLE CHANNEL MESSAGES

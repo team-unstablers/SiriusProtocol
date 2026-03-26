@@ -2,8 +2,8 @@
 syntax: "proto3"
 package: "sirius.msgdef.v1.channels.projection"
 import:
-  - "msgdef/common-types.proto"
-  - "msgdef/v1/channels/projection/projection_typedef.proto"
+  - "common-types.proto"
+  - "v1/channels/projection/projection_typedef.proto"
 ---
 
 # PROJECTION DISPLAY MANAGEMENT

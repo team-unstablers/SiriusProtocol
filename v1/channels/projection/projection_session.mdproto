@@ -2,9 +2,9 @@
 syntax: "proto3"
 package: "sirius.msgdef.v1.channels.projection"
 import:
-  - "msgdef/common-types.proto"
-  - "msgdef/v1/channels/projection/projection_codec.proto"
-  - "msgdef/v1/channels/projection/projection_source.proto"
+  - "common-types.proto"
+  - "v1/channels/projection/projection_codec.proto"
+  - "v1/channels/projection/projection_source.proto"
 ---
 
 # PROJECTION SESSION MESSAGES
