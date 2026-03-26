@@ -556,15 +556,15 @@ AccessibilityNode {
 
     role: "com.leaves.shizuku.GameRendererView",
 
-    description: "The school rooftop. Evening is approaching and the sunset is fading. A girl who introduced herself as Tsukiyama Shizuku is standing on the rooftop, gazing at the sunset.",
+    description: "The school rooftop. Evening draws near, and the sky is aglow with sunset. A girl who gave her name as Tsukiyama Shizuku stands on the rooftop, gazing at the sunset.",
     children: [
         {
             role: "text",
-            description: "Shizuku is watching the sunset. For some reason, she looks sad as she gazes at it. I...",
+            description: "Shizuku is gazing at the sunset. For some reason, she looks sad. I...",
         },
         {
             role: "button",
-            description: "A: Say to Shizuku, 'Let's head back now.'",
+            description: "A: Tell Shizuku, 'Let's head back now.'",
         },
         {
             role: "button",
