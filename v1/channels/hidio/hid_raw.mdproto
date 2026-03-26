@@ -7,8 +7,8 @@ import:
 
 # HID RAW MESSAGES
 
-HID 이벤트의 원시(raw) 형식을 정의합니다.
-펜 태블릿, 조이스틱 등 키보드/마우스 외의 다양한 입력 장치를 지원하기 위한 확장 포인트입니다.
+Defines the raw format for HID events.
+Serves as an extension point for supporting various input devices beyond keyboards and mice, such as pen tablets and joysticks.
 
 ---
 
@@ -17,39 +17,39 @@ HID 이벤트의 원시(raw) 형식을 정의합니다.
 ## RawEvent
 
 ```protobuf
-/// HID 원시 이벤트
+/// HID raw event
 message RawEvent {
-  /// 이벤트 식별자
+  /// Event identifier
   uint32 id = 1;
-  /// 이벤트 유형
+  /// Event type
   uint32 type = 2;
 
-  /// HID 장치 식별자 (vendor ID)
+  /// HID device identifier (vendor ID)
   uint32 vendor = 3;
-  /// HID 장치 식별자 (product ID)
+  /// HID device identifier (product ID)
   uint32 product = 4;
 
-  /// 이벤트 파라미터 (#1 ~ #4)
-  /// 구체적인 의미는 장치 및 이벤트 유형에 따라 달라집니다.
+  /// Event parameters (#1 through #4)
+  /// The specific meaning varies depending on the device and event type.
   fixed32 param1 = 5;
   fixed32 param2 = 6;
   fixed32 param3 = 7;
   fixed32 param4 = 8;
 
-  /// 추가 데이터 (선택)
+  /// Additional data (optional)
   optional bytes extra = 9;
 }
 ```
 
 ### DESCRIPTION
 
-키보드/마우스 이벤트로 표현할 수 없는 HID 장치의 원시 이벤트를 전달하기 위한 범용 메시지입니다.
-`param1`~`param4`는 `fixed32` 타입이지만, 장치 및 이벤트 유형에 따라 float, 비트 필드 등 다양한 방식으로 해석될 수 있습니다.
+A general-purpose message for delivering raw events from HID devices that cannot be represented as keyboard/mouse events.
+`param1` through `param4` are `fixed32` types, but MAY be interpreted in various ways such as float or bit fields depending on the device and event type.
 
 ### IMPLEMENTATION NOTES
 
-- `param1`~`param4`를 union struct로 재해석하는 경우 다음 규칙을 따라야 합니다:
-  - struct 내부의 모든 필드는 little-endian 형식이어야 합니다.
-  - float 형식이 포함되는 경우 IEEE 754 표준을 따라야 합니다.
-  - `__attribute__((packed))` 지시자를 사용하여 패딩이 없도록 해야 합니다.
-- Noctiluca 제품군에서는 RawEvent를 서버에서 직접 처리할 예정은 없으며, 플러그인 인터페이스로써 제공할 예정입니다.
+- When reinterpreting `param1` through `param4` as a union struct, the following rules MUST be followed:
+  - All fields within the struct MUST be in little-endian format.
+  - If float types are included, they MUST follow the IEEE 754 standard.
+  - The `__attribute__((packed))` directive MUST be used to ensure no padding.
+- In the Noctiluca product line, RawEvent is not intended to be processed directly by the server; it will be provided as a plugin interface.

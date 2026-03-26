@@ -11,8 +11,8 @@ import:
 
 # HIDIO CHANNEL MESSAGES
 
-HIDIO 채널은 HID (Human Interface Device) 입력 이벤트를 전송하는 데 사용됩니다.
-키보드, 마우스 등의 입력 장치에서 발생하는 이벤트를 캡처하여 원격 시스템으로 전송합니다.
+The HIDIO channel is used to transmit HID (Human Interface Device) input events.
+It captures events from input devices such as keyboards and mice and transmits them to the remote system.
 
 ---
 
@@ -31,7 +31,7 @@ message HIDEvent {
     MouseMoveEvent mouseMoveEvent = 6;
     MouseButtonEvent mouseButtonEvent = 7;
     MouseWheelEvent mouseWheelEvent = 8;
-    
+
     PenSetupEvent penSetupEvent = 17;
     PenDestroyEvent penDestroyEvent = 18;
     PenProximityEvent penProximityEvent = 19;
@@ -43,8 +43,8 @@ message HIDEvent {
 
 ### DESCRIPTION
 
-다양한 HID 이벤트를 담을 수 있는 컨테이너 타입입니다.
-`oneof event` 필드를 통해 키보드, 마우스, Raw 이벤트 중 하나를 선택적으로 포함합니다.
+A container type that can hold various HID events.
+The `oneof event` field selectively includes one of keyboard, mouse, pen, or raw events.
 
 ---
 
@@ -53,27 +53,27 @@ message HIDEvent {
 ## HIDIOPacket
 
 ```protobuf
-/// HIDIO 채널을 통해 전송되는 HID 이벤트 패킷
+/// HID event packet transmitted through the HIDIO channel.
 // @opcode: 0x8001
 message HIDIOPacket {
-  /// 패킷 순서 번호
+  /// Packet sequence number
   uint64 sequenceNumber = 1;
-  /// 이벤트 발생 시각 (Unix timestamp, 밀리초 단위)
+  /// Timestamp of when the event occurred (Unix timestamp in milliseconds)
   uint64 timestamp = 2;
 
-  /// HID 이벤트 목록
+  /// List of HID events
   repeated HIDEvent events = 3;
 }
 ```
 
 ### DESCRIPTION
 
-HIDIO 채널의 유일한 프로토콜 메시지로, 하나 이상의 HID 이벤트를 묶어서 전송합니다.
-클라이언트가 서버로 전송하며, 서버는 수신한 이벤트를 호스트 시스템에 인젝션합니다.
+The sole protocol message of the HIDIO channel, which bundles one or more HID events for transmission.
+Sent from the client to the server, which then injects the received events into the host system.
 
 ### IMPLEMENTATION NOTES
 
-- 애플리케이션에서는 가능한 한 여러 이벤트를 하나의 패킷에 묶어서 전송하는 것이 권장됩니다.
-- `sequenceNumber`는 클라이언트 측에서 단조 증가하는 값으로 설정합니다.
-- `timestamp`는 이벤트가 발생한 시점의 Unix timestamp(밀리초 단위)입니다.
-- HIDIO 채널은 클라이언트에서 서버로의 단방향 전송만 수행합니다. 서버는 이 채널을 통해 메시지를 보내지 않습니다.
+- Applications SHOULD batch multiple events into a single packet whenever possible.
+- `sequenceNumber` MUST be set to a monotonically increasing value on the client side.
+- `timestamp` is the Unix timestamp (in milliseconds) of when the event occurred.
+- The HIDIO channel is unidirectional from client to server only. The server MUST NOT send messages through this channel.

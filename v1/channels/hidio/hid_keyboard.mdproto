@@ -7,7 +7,7 @@ import:
 
 # HID KEYBOARD MESSAGES
 
-키보드 입력 이벤트 및 레이아웃 설정 관련 메시지 정의입니다.
+Message definitions for keyboard input events and layout configuration.
 
 ---
 
@@ -22,8 +22,8 @@ constset KeyboardLayoutId: uint32 {
   const jis = 2;
   const ks = 3;
 
-  /// 가상 키보드 (iOS, iPhone 등의 태블릿/휴대폰의 소프트웨어 키보드)를 통해
-  /// 키보드 이벤트를 보낼 것임을 나타내는 힌트 값
+  /// A hint value indicating that keyboard events will be sent via a virtual keyboard
+  /// (software keyboard on tablets/phones such as iOS, iPhone, etc.)
   const virtual = 15;
 }
 ```
@@ -33,18 +33,18 @@ constset KeyboardLayoutId: uint32 {
 ```constset
 constset KeyboardEventType: uint32 {
   const unknown = 0;
-  /// 키 다운 이벤트
+  /// Key down event
   const keyDown = 1;
-  /// 키 업 이벤트
+  /// Key up event
   const keyUp = 2;
-  /// UCS-4 문자 입력 이벤트. keyCode 필드에 UCS-4 코드포인트가 포함됩니다.
+  /// UCS-4 character input event. The keyCode field contains the UCS-4 codepoint.
   const ucs4 = 3;
 }
 ```
 
 ### DESCRIPTION
 
-키보드 이벤트의 종류를 나타냅니다. `ucs4` 타입은 CJK 등 키코드 매핑이 불가능한 문자를 직접 전송할 때 사용됩니다.
+Indicates the type of keyboard event. The `ucs4` type is used to directly transmit characters such as CJK that cannot be mapped to keycodes.
 
 ## KeyboardModifier
 
@@ -69,14 +69,14 @@ optionset KeyboardModifier: uint32 {
 ## KeyboardLayout
 
 ```protobuf
-/// 키보드 레이아웃 정의
+/// Keyboard layout definition
 message KeyboardLayout {
   // @constset: KeyboardLayoutId
   uint32 layoutId = 1;
 
-  /// Locale ID (MS-LCID 규격)
-  /// - 예: 0x0409 = en-US, 0x0412 = ko-KR
-  /// - 참조: https://learn.microsoft.com/en-us/openspecs/windows_protocols/ms-lcid/70feba9f-294e-491e-b6eb-56532684c37f
+  /// Locale ID (MS-LCID specification)
+  /// - e.g., 0x0409 = en-US, 0x0412 = ko-KR
+  /// - Reference: https://learn.microsoft.com/en-us/openspecs/windows_protocols/ms-lcid/70feba9f-294e-491e-b6eb-56532684c37f
   uint32 localeId = 2;
 
   uint32 flags = 15;
@@ -86,36 +86,36 @@ message KeyboardLayout {
 ## KeyboardHack
 
 ```protobuf
-/// 키보드 Hack 정의
+/// Keyboard hack definition
 message KeyboardHack {
-  /// Hack 고유 식별자
+  /// Unique hack identifier
   string identifier = 1;
-  /// 추가 인자 맵
+  /// Additional argument map
   map<string, string> args = 2;
 }
 ```
 
 ### DESCRIPTION
 
-Keyboard Hack은 사용자 편의를 위해 특정 키보드 동작을 수정하거나 보완하는 설정을 의미합니다.
-각 Hack은 고유한 `identifier`를 가지며, 필요에 따라 추가적인 인자를 `args` 맵을 통해 전달할 수 있습니다.
+A Keyboard Hack refers to a configuration that modifies or supplements specific keyboard behavior for user convenience.
+Each hack has a unique `identifier`, and additional arguments can be passed via the `args` map as needed.
 
 ### IMPLEMENTATION NOTES
 
-- 서버는 `KeyboardSetupEvent`로 전달된 Hack 목록을 기반으로 Hack 플러그인을 활성화합니다.
-- 정의된 Hack 식별자 예시:
-  - `app.noctiluca.hidio.hack.general.capslock_as_ctrl`: Caps Lock 키를 Ctrl 키로 동작하게 함
-  - `app.noctiluca.hidio.hack.cjk.emulate_win32_ime_switch`: Alt + Shift 키 조합으로 macOS 호스트에서 IM 전환 동작을 에뮬레이트
-  - `app.noctiluca.hidio.hack.cjk.emulate_win32_hangul_toggle`: 한/영 키를 누르면 macOS 호스트에서 한글/영문 입력 전환
+- The server activates hack plugins based on the hack list provided via `KeyboardSetupEvent`.
+- Examples of defined hack identifiers:
+  - `app.noctiluca.hidio.hack.general.capslock_as_ctrl`: Makes the Caps Lock key act as the Ctrl key
+  - `app.noctiluca.hidio.hack.cjk.emulate_win32_ime_switch`: Emulates input method switching on the macOS host using the Alt + Shift key combination
+  - `app.noctiluca.hidio.hack.cjk.emulate_win32_hangul_toggle`: Toggles Korean/English input on the macOS host when the Hangul key is pressed
 
 ## KeyboardSetupEvent
 
 ```protobuf
-/// 키보드 장치 설정 이벤트
+/// Keyboard device setup event
 message KeyboardSetupEvent {
-  /// 클라이언트가 선호하는 키보드 레이아웃 목록 (우선순위 순)
+  /// List of keyboard layouts preferred by the client (in priority order)
   repeated KeyboardLayout preferredLayouts = 1;
-  /// 활성화할 키보드 Hack 목록
+  /// List of keyboard hacks to activate
   repeated KeyboardHack hacks = 2;
 
   uint32 flags = 15;
@@ -124,13 +124,13 @@ message KeyboardSetupEvent {
 
 ### DESCRIPTION
 
-클라이언트가 서버에게 키보드 장치 설정을 전달하는 이벤트입니다.
-선호하는 키보드 레이아웃과 활성화할 Keyboard Hack 목록을 포함합니다.
+An event sent by the client to convey keyboard device settings to the server.
+Includes the preferred keyboard layouts and the list of keyboard hacks to activate.
 
 ### IMPLEMENTATION NOTES
 
-- 클라이언트가 요청한 `layoutId`를 서버가 지원하지 않는 경우, 서버는 ANSI 레이아웃을 기본값으로 사용하고, 메인 채널을 통해 `ServerNotice` (severity: WARNING)를 전송합니다.
-- 이 이벤트는 HIDIO 채널이 아닌 `HIDIOPacket` 내부에 포함되어 전송됩니다.
+- If the server does not support the `layoutId` requested by the client, the server SHOULD use the ANSI layout as the default and send a `ServerNotice` (severity: WARNING) through the main channel.
+- This event is transmitted inside an `HIDIOPacket`, not directly on the HIDIO channel.
 
 ---
 
@@ -139,7 +139,7 @@ message KeyboardSetupEvent {
 ## KeyboardEvent
 
 ```protobuf
-/// 키보드 입력 이벤트
+/// Keyboard input event
 message KeyboardEvent {
   // @constset: KeyboardEventType
   uint32 eventType = 1;
@@ -156,10 +156,10 @@ message KeyboardEvent {
 
 ### DESCRIPTION
 
-키보드 입력 이벤트를 나타냅니다. `eventType` 필드가 키 다운, 키 업, UCS-4 문자 입력 등의 이벤트 유형을 결정합니다.
+Represents a keyboard input event. The `eventType` field determines the type of event: key down, key up, UCS-4 character input, etc.
 
 ### IMPLEMENTATION NOTES
 
-- `keyCode`는 Linux keycode 규격을 따릅니다. 서버는 이를 호스트 시스템의 키코드(macOS의 경우 Carbon keycode)로 변환하여 인젝션합니다.
-- `eventType`이 `ucs4`인 경우, `keyCode` 필드에 UCS-4 코드포인트가 포함됩니다. 서버는 이를 문자 입력으로 처리합니다.
-- `scanCode`는 현재 사용되지 않으며 0으로 설정됩니다.
+- `keyCode` follows the Linux keycode specification. The server converts it to the host system's keycode (Carbon keycode on macOS) before injection.
+- When `eventType` is `ucs4`, the `keyCode` field contains a UCS-4 codepoint. The server processes this as a character input.
+- `scanCode` is currently unused and MUST be set to 0.

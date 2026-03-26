@@ -7,7 +7,7 @@ import:
 
 # HID MOUSE MESSAGES
 
-마우스 입력 이벤트 관련 메시지 정의입니다.
+Message definitions for mouse input events.
 
 ---
 
@@ -17,10 +17,10 @@ import:
 
 ```constset
 constset MouseMoveEventType: uint32 {
-  /// 절대 좌표 이동 (화면의 특정 위치로 커서 이동)
+  /// Absolute coordinate movement (move cursor to a specific position on screen)
   const absolute = 0;
 
-  /// 상대 좌표 이동 (현재 위치에서 특정 델타만큼 커서 이동)
+  /// Relative coordinate movement (move cursor by a specific delta from current position)
   const relative = 1;
 }
 ```
@@ -29,10 +29,10 @@ constset MouseMoveEventType: uint32 {
 
 ```constset
 constset MouseButtonEventType: uint32 {
-  /// 마우스 버튼 눌림
+  /// Mouse button pressed
   const down = 0;
 
-  /// 마우스 버튼 뗌
+  /// Mouse button released
   const up = 1;
 }
 ```
@@ -56,11 +56,11 @@ constset MouseButtonType: uint32 {
 ## CursorPositionPixel
 
 ```protobuf
-/// 픽셀 단위 커서 좌표
+/// Cursor position in pixel coordinates
 message CursorPositionPixel {
-  /// 왼쪽 위 모서리를 기준으로 한 X 픽셀 좌표
+  /// X pixel coordinate relative to the top-left corner
   sint32 x = 1;
-  /// 왼쪽 위 모서리를 기준으로 한 Y 픽셀 좌표
+  /// Y pixel coordinate relative to the top-left corner
   sint32 y = 2;
 }
 ```
@@ -68,11 +68,11 @@ message CursorPositionPixel {
 ## CursorPositionPercent
 
 ```protobuf
-/// 비율 기반 커서 좌표
+/// Cursor position in percentage-based coordinates
 message CursorPositionPercent {
-  /// 0.0 ~ 1.0 범위의 값; 왼쪽 위 모서리를 기준으로 함
+  /// Value in the range 0.0 to 1.0; relative to the top-left corner
   float x = 1;
-  /// 0.0 ~ 1.0 범위의 값; 왼쪽 위 모서리를 기준으로 함
+  /// Value in the range 0.0 to 1.0; relative to the top-left corner
   float y = 2;
 }
 ```
@@ -80,15 +80,15 @@ message CursorPositionPercent {
 ## CursorPositionScope
 
 ```protobuf
-/// 커서 좌표의 기준 범위를 지정하는 타입
+/// Specifies the reference scope for cursor coordinates
 message CursorPositionScope {
   oneof scope {
-    /// 특정 디스플레이의 전체 영역을 기준으로 합니다.
-    /// - -1: 기본(메인) 디스플레이
-    /// - -2: 전체 화면 영역 (멀티 디스플레이 환경에서 모든 디스플레이를 포함한 영역)
+    /// Based on the full area of a specific display.
+    /// - -1: default (main) display
+    /// - -2: entire screen area (spanning all displays in a multi-display environment)
     sint32 displayId = 1;
 
-    /// 특정 윈도우 ID(핸들)을 기준으로 합니다.
+    /// Based on a specific window ID (handle).
     sint64 windowId = 2;
   }
 }
@@ -101,7 +101,7 @@ message CursorPositionScope {
 ## MouseMoveEvent
 
 ```protobuf
-/// 마우스 이동 이벤트
+/// Mouse move event
 message MouseMoveEvent {
   // @constset: MouseMoveEventType
   uint32 moveType = 1;
@@ -117,18 +117,18 @@ message MouseMoveEvent {
 
 ### DESCRIPTION
 
-마우스 커서 이동 이벤트를 나타냅니다. `moveType`에 따라 절대 좌표 또는 상대 좌표로 동작하며, `scope`를 통해 좌표의 기준 범위를 지정합니다.
+Represents a mouse cursor move event. The behavior depends on `moveType` (absolute or relative coordinates), and `scope` specifies the reference frame for the coordinates.
 
 ### IMPLEMENTATION NOTES
 
-- 절대 좌표(`absolute`) + 퍼센트(`percent`) 조합이 가장 일반적으로 사용됩니다.
-- 상대 좌표(`relative`) + 픽셀(`pixel`) 조합은 독점 모드(Exclusive Mode)에서 사용됩니다.
-- 서버는 수신한 좌표를 호스트 시스템의 좌표계로 변환하여 커서를 이동합니다. macOS의 경우 CoreGraphics 좌표계로 변환합니다.
+- The combination of absolute coordinates (`absolute`) + percentage (`percent`) is the most commonly used.
+- The combination of relative coordinates (`relative`) + pixel (`pixel`) is used in exclusive mode.
+- The server converts the received coordinates to the host system's coordinate system before moving the cursor. On macOS, this means converting to the CoreGraphics coordinate system.
 
 ## MouseButtonEvent
 
 ```protobuf
-/// 마우스 버튼 입력 이벤트
+/// Mouse button input event
 message MouseButtonEvent {
   // @constset: MouseButtonEventType
   uint32 eventType = 1;
@@ -140,24 +140,24 @@ message MouseButtonEvent {
 
 ### DESCRIPTION
 
-마우스 버튼 누름/뗌 이벤트를 나타냅니다.
+Represents a mouse button press/release event.
 
 ### IMPLEMENTATION NOTES
 
-- 서버는 더블 클릭/트리플 클릭 판정을 자체적으로 수행합니다. 클라이언트는 개별 down/up 이벤트만 전송하면 됩니다.
+- The server handles double-click/triple-click detection on its own. The client only needs to send individual down/up events.
 
 ## MouseWheelEvent
 
 ```protobuf
-/// 마우스 휠 이벤트
+/// Mouse wheel event
 message MouseWheelEvent {
-  /// 수평 휠 델타
+  /// Horizontal wheel delta
   float deltaX = 1;
-  /// 수직 휠 델타
+  /// Vertical wheel delta
   float deltaY = 2;
 }
 ```
 
 ### DESCRIPTION
 
-마우스 휠(스크롤) 이벤트를 나타냅니다. 수평과 수직 방향의 스크롤 델타를 포함합니다.
+Represents a mouse wheel (scroll) event. Includes scroll deltas for both horizontal and vertical directions.
