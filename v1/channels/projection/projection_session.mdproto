@@ -9,7 +9,7 @@ import:
 
 # PROJECTION SESSION MESSAGES
 
-비디오 프로젝션 세션의 생성, 중지, 상태 보고 및 이벤트를 위한 메시지 정의입니다.
+Message definitions for video projection session creation, stopping, status reporting, and events.
 
 ---
 
@@ -20,42 +20,42 @@ import:
 ```constset
 constset VideoSessionEndReason: int32 {
   const unknown = 0;
-  /// 클라이언트의 요청으로 종료됨
+  /// Ended by client request
   const clientRequested = 1;
-  /// 디스플레이가 연결 해제됨
+  /// Display disconnected
   const displayDisconnected = 2;
-  /// 내부 오류로 종료됨
+  /// Ended due to an internal error
   const internalError = 3;
-  /// 레코더(화면 캡쳐) 실패
+  /// Recorder (screen capture) failure
   const recorderFailed = 4;
-  /// 데이터 채널 오류
+  /// Data channel error
   const dataChannelError = 5;
 }
 ```
 
 ### DESCRIPTION
 
-- 프로젝션 세션이 종료된 사유를 나타냅니다.
-- `ProjectionSessionEndedEvent.reason` 필드에서 사용됩니다.
+- Indicates the reason why a projection session was ended.
+- Used in the `ProjectionSessionEndedEvent.reason` field.
 
 ## VideoSessionFailureReason
 
 ```constset
 constset VideoSessionFailureReason: int32 {
   const unknown = 0;
-  /// 요청한 소스를 찾을 수 없음
+  /// The requested source was not found
   const sourceNotFound = 1;
-  /// 코덱 협상 실패
+  /// Codec negotiation failed
   const codecNegotiationFailed = 2;
-  /// 서버 내부 오류
+  /// Internal server error
   const serverError = 3;
 }
 ```
 
 ### DESCRIPTION
 
-- 프로젝션 세션 생성이 실패한 사유를 나타냅니다.
-- `ProjectionSessionCreationFailedEvent.reason` 필드에서 사용됩니다.
+- Indicates the reason why a projection session creation failed.
+- Used in the `ProjectionSessionCreationFailedEvent.reason` field.
 
 ---
 
@@ -64,163 +64,163 @@ constset VideoSessionFailureReason: int32 {
 ## ProjectionRequest
 
 ```protobuf
-/// 비디오 프로젝션 세션 생성을 요청합니다.
+/// Requests creation of a video projection session.
 // @opcode: 0x8001
 message ProjectionRequest {
-  /// 세션 식별자
+  /// Session identifier
   SRUUID identifier = 1;
 
-  /// 프로젝션할 소스 (디스플레이, 영역, 또는 단일 창)
+  /// Source to project (display, region, or single window)
   ProjectionSource viewport = 2;
-  /// 클라이언트가 선호하는 코덱 목록 (우선순위 순)
+  /// List of codecs preferred by the client (in priority order)
   repeated Codec preferredCodecs = 3;
 }
 ```
 
 ### DESCRIPTION
 
-- 클라이언트가 서버에게 비디오 프로젝션 세션 생성을 요청할 때 사용합니다.
-- 서버는 `preferredCodecs`를 기반으로 코덱 협상을 수행하고, 성공 시 `ProjectionSessionCreatedEvent`, 실패 시 `ProjectionSessionCreationFailedEvent`로 응답합니다.
+- Used by the client to request the creation of a video projection session from the server.
+- The server performs codec negotiation based on `preferredCodecs` and responds with `ProjectionSessionCreatedEvent` on success or `ProjectionSessionCreationFailedEvent` on failure.
 
 ### IMPLEMENTATION NOTES
 
-- 서버는 코덱 협상에 성공하면 별도의 `ProjectionDataChannel`을 열어 인코딩된 비디오 프레임을 전송합니다.
-- `viewport`에서 지정한 소스의 콘텐츠 크기와 `preferredCodecs`의 `size` 필드를 비교하여 실제 해상도가 결정됩니다.
+- Upon successful codec negotiation, the server opens a separate `ProjectionDataChannel` to transmit encoded video frames.
+- The actual resolution is determined by comparing the content size of the source specified in `viewport` with the `size` field of `preferredCodecs`.
 
 ## StopProjectionRequest
 
 ```protobuf
-/// 비디오 프로젝션 세션 중지를 요청합니다.
+/// Requests stopping a video projection session.
 // @opcode: 0x8002
 message StopProjectionRequest {
-  /// 중지할 세션 식별자
+  /// Identifier of the session to stop
   SRUUID identifier = 1;
 }
 ```
 
 ### DESCRIPTION
 
-- 클라이언트가 진행 중인 비디오 프로젝션 세션의 중지를 요청할 때 사용합니다.
-- 서버는 해당 세션을 종료하고, 관련 데이터 채널을 닫습니다.
+- Used by the client to request the stopping of an ongoing video projection session.
+- The server terminates the session and closes the associated data channel.
 
 ## ProjectionPerformanceReport
 
 ```protobuf
-/// 클라이언트의 프로젝션 성능 보고서입니다.
+/// Client's projection performance report.
 // @opcode: 0x8003
 message ProjectionPerformanceReport {
-  /// 프로젝션 세션 식별자
+  /// Projection session identifier
   SRUUID identifier = 1;
 
-  /// 인터벌 동안 수신된 프레임 수
+  /// Number of frames received during the interval
   uint32 receivedFrameCount = 2;
-  /// 인터벌 동안 디코드에 성공한 프레임 수
+  /// Number of frames successfully decoded during the interval
   uint32 decodedFrameCount = 3;
-  /// 인터벌 동안 드롭된 프레임 수
+  /// Number of frames dropped during the interval
   uint32 droppedFrameCount = 4;
 
-  /// 인터벌 동안의 평균 디코딩 시간 (밀리초 단위)
+  /// Average decoding time during the interval (in milliseconds)
   uint32 averageDecodeTimeMs = 5;
 }
 ```
 
 ### DESCRIPTION
 
-- 프로젝션 세션이 진행되는 동안, 클라이언트가 주기적으로 서버에게 전송하는 성능 보고서입니다.
-- 서버는 이 보고서를 통해 클라이언트의 디코딩 성능과 네트워크 상태를 파악하여, 필요 시 비디오 품질을 조정할 수 있습니다.
+- A performance report sent periodically by the client to the server during a projection session.
+- The server can use this report to gauge the client's decoding performance and network conditions, adjusting video quality as needed.
 
 ### IMPLEMENTATION NOTES
 
-- 모든 프레임 카운트 필드는 마지막 보고서 이후로 수신/처리된 프레임 수를 나타냅니다 (누적값이 아닌 인터벌 단위 값).
-- 서버의 AutoQuality 플래너가 이 보고서를 활용하여 비트레이트/해상도를 동적으로 조정합니다.
+- All frame count fields represent frames received/processed since the last report (interval-based values, not cumulative).
+- The server's AutoQuality planner uses this report to dynamically adjust bitrate and resolution.
 
 ## ProjectionSessionCreatedEvent
 
 ```protobuf
-/// 프로젝션 세션이 성공적으로 생성되었을 때 발생하는 이벤트입니다.
+/// Event emitted when a projection session is successfully created.
 // @opcode: 0x8021
 message ProjectionSessionCreatedEvent {
-  /// 세션 식별자
+  /// Session identifier
   SRUUID identifier = 1;
 
-  /// 실제 프로젝션 소스
+  /// Actual projection source
   ProjectionSource source = 2;
-  /// 협상된 최종 코덱
+  /// Negotiated final codec
   Codec codec = 3;
 }
 ```
 
 ### DESCRIPTION
 
-- 서버가 `ProjectionRequest`를 처리하여 세션을 성공적으로 생성했을 때 클라이언트에게 전송하는 이벤트입니다.
-- `codec` 필드에는 서버가 협상하여 결정한 최종 코덱 설정이 포함됩니다. 클라이언트는 이를 기반으로 디코더를 초기화해야 합니다.
+- Sent by the server to the client when a session has been successfully created after processing a `ProjectionRequest`.
+- The `codec` field contains the final codec settings determined through negotiation. The client MUST initialize its decoder based on this.
 
 ## ProjectionSessionCreationFailedEvent
 
 ```protobuf
-/// 프로젝션 세션 생성이 실패했을 때 발생하는 이벤트입니다.
+/// Event emitted when a projection session creation fails.
 // @opcode: 0x8022
 message ProjectionSessionCreationFailedEvent {
-  /// 세션 식별자
+  /// Session identifier
   SRUUID identifier = 1;
-  /// 실패 사유
+  /// Failure reason
   // @constset: VideoSessionFailureReason
   int32 reason = 2;
 
-  /// 상세 오류 메시지
+  /// Detailed error message
   optional string message = 3;
 }
 ```
 
 ### DESCRIPTION
 
-- 서버가 `ProjectionRequest`를 처리하는 과정에서 세션 생성에 실패했을 때 전송하는 이벤트입니다.
-- 코덱 협상 실패, 소스를 찾을 수 없음, 서버 내부 오류 등의 사유가 있을 수 있습니다.
+- Sent by the server when session creation fails while processing a `ProjectionRequest`.
+- Possible reasons include codec negotiation failure, source not found, and internal server errors.
 
 ## ProjectionSessionChangedEvent
 
 ```protobuf
-/// 프로젝션 세션 설정이 변경되었을 때 발생하는 이벤트입니다.
+/// Event emitted when projection session settings are changed.
 // @opcode: 0x8023
 message ProjectionSessionChangedEvent {
-  /// 세션 식별자
+  /// Session identifier
   SRUUID identifier = 1;
-  int32 reason = 2; // TODO: constset 정의 필요
+  int32 reason = 2; // TODO: constset definition needed
 
-  /// 변경된 프로젝션 소스 (변경되지 않은 경우 미설정)
+  /// Changed projection source (not set if unchanged)
   ProjectionSource source = 3;
-  /// 변경된 코덱 (변경되지 않은 경우 미설정)
+  /// Changed codec (not set if unchanged)
   Codec codec = 4;
 }
 ```
 
 ### DESCRIPTION
 
-- 프로젝션 세션의 소스나 코덱 설정이 서버에 의해 변경되었을 때 클라이언트에게 전송하는 이벤트입니다.
-- 클라이언트는 `codec` 필드가 설정된 경우 디코더를 재구성해야 합니다.
+- Sent by the server to the client when the source or codec settings of a projection session have been changed.
+- If the `codec` field is set, the client MUST reconfigure its decoder.
 
 ### IMPLEMENTATION NOTES
 
-- 현재 서버 구현체에서는 해상도 변경(resolutionChanged) 시 `reason = 1`을 전송합니다. 추후 constset으로 정의될 예정입니다.
+- The current server implementation sends `reason = 1` for resolution changes (resolutionChanged). This will be defined as a constset in the future.
 
 ## ProjectionSessionEndedEvent
 
 ```protobuf
-/// 프로젝션 세션이 종료되었을 때 발생하는 이벤트입니다.
+/// Event emitted when a projection session has ended.
 // @opcode: 0x8024
 message ProjectionSessionEndedEvent {
-  /// 세션 식별자
+  /// Session identifier
   SRUUID identifier = 1;
-  /// 종료 사유
+  /// End reason
   // @constset: VideoSessionEndReason
   int32 reason = 2;
 
-  /// 상세 메시지
+  /// Detailed message
   optional string message = 3;
 }
 ```
 
 ### DESCRIPTION
 
-- 프로젝션 세션이 종료되었을 때 서버가 클라이언트에게 전송하는 이벤트입니다.
-- 클라이언트 요청에 의한 종료뿐 아니라, 디스플레이 연결 해제, 내부 오류, 데이터 채널 오류 등 서버 측 사유로도 전송될 수 있습니다.
+- Sent by the server to the client when a projection session has ended.
+- May be sent not only for client-requested termination, but also for server-side reasons such as display disconnection, internal errors, or data channel errors.

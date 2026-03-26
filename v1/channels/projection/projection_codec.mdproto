@@ -8,7 +8,7 @@ import:
 
 # PROJECTION CODEC DEFINITIONS
 
-비디오 프로젝션을 위한 코덱 및 품질 설정 정의입니다.
+Codec and quality setting definitions for video projection.
 
 ---
 
@@ -39,13 +39,13 @@ constset CodecFourCC: uint32 {
 
 ```constset
 constset AutoQualityMode: uint32 {
-  /// 품질과 성능 간의 균형을 맞춥니다.
+  /// Balances quality and performance.
   const balancedPriority = 0;
 
-  /// 가능한 최고의 품질을 우선시합니다.
+  /// Prioritizes the highest possible quality.
   const qualityPriority = 1;
 
-  /// 가능한 최고의 성능을 우선시합니다.
+  /// Prioritizes the highest possible performance.
   const performancePriority = 2;
 }
 ```
@@ -54,13 +54,13 @@ constset AutoQualityMode: uint32 {
 
 ```constset
 constset LosslessQualityMode: uint32 {
-  /// 성능과 압축률 간의 균형을 맞춥니다.
+  /// Balances performance and compression ratio.
   const balancedPriority = 0;
 
-  /// 성능을 우선시합니다. (압축률이 낮아질 수 있음)
+  /// Prioritizes performance. (compression ratio may decrease)
   const speedPriority = 1;
 
-  /// 압축률을 우선시합니다. (성능이 낮아질 수 있음)
+  /// Prioritizes compression ratio. (performance may decrease)
   const compressionPriority = 2;
 }
 ```
@@ -85,9 +85,9 @@ constset CodecOptionKey: string {
 
 ### DESCRIPTION
 
-- 코덱별 추가 옵션의 키를 정의합니다.
-- `Codec.options` 필드에 `"key: 'value'; key2: 'value2'"` 형식의 문자열로 직렬화되어 전달됩니다.
-- `!required` 접미사를 붙이면 해당 옵션이 필수(mandatory)로 취급되며, 코덱 협상 시 양측이 반드시 지원해야 합니다.
+- Defines the keys for per-codec additional options.
+- Serialized as a string in the format `"key: 'value'; key2: 'value2'"` in the `Codec.options` field.
+- Appending the `!required` suffix marks the option as mandatory; both sides MUST support it during codec negotiation.
 
 ## CodecOptionValue
 
@@ -135,12 +135,12 @@ constset CodecOptionValue: string {
 
 ### DESCRIPTION
 
-- `CodecOptionKey`에 대응하는 값 상수들을 정의합니다.
-- 각 키별로 허용되는 값의 범위가 다르며, 접두사(`kColorFormat`, `kProfile` 등)로 관련 키를 구분합니다.
+- Defines value constants corresponding to `CodecOptionKey`.
+- The range of allowed values differs per key, and the prefix (`kColorFormat`, `kProfile`, etc.) identifies the associated key.
 
 ### IMPLEMENTATION NOTES
 
-- `// TODO:` mdproto 정의에 constset의 partial 정의가 가능하도록 추가해야 합니다. 현재 하나의 constset에 모든 키의 값이 혼합되어 있습니다.
+- `// TODO:` MDProto should support partial constset definitions. Currently, all key values are mixed in a single constset.
 
 ---
 
@@ -149,7 +149,7 @@ constset CodecOptionValue: string {
 ## AutoQuality
 
 ```protobuf
-/// 자동 품질 모드 (서버가 네트워크 상태에 따라 자동 조절)
+/// Auto quality mode (server automatically adjusts based on network conditions)
 message AutoQuality {
   // @constset: AutoQualityMode
   uint32 mode = 1;
@@ -159,9 +159,9 @@ message AutoQuality {
 ## ConstantBitrateQuality
 
 ```protobuf
-/// 상수 비트레이트 (CBR) 품질 설정
+/// Constant bitrate (CBR) quality setting
 message ConstantBitrateQuality {
-  /// 비트레이트 (kbps)
+  /// Bitrate (kbps)
   int32 bitrateKbps = 1;
 }
 ```
@@ -169,11 +169,11 @@ message ConstantBitrateQuality {
 ## VariableBitrateQuality
 
 ```protobuf
-/// 가변 비트레이트 (VBR) 품질 설정
+/// Variable bitrate (VBR) quality setting
 message VariableBitrateQuality {
-  /// 최대 비트레이트 (kbps)
+  /// Maximum bitrate (kbps)
   int32 maxBitrateKbps = 1;
-  /// 타겟 비트레이트 (kbps)
+  /// Target bitrate (kbps)
   int32 targetBitrateKbps = 2;
 }
 ```
@@ -181,8 +181,8 @@ message VariableBitrateQuality {
 ## FixedQuality
 
 ```protobuf
-/// 고정 품질 (CQP/CRF) 설정
-/// 0부터 100까지의 값으로 품질을 지정합니다.
+/// Fixed quality (CQP/CRF) setting
+/// Specifies quality as a value from 0 to 100.
 message FixedQuality {
   int32 quality = 1;
 }
@@ -190,13 +190,13 @@ message FixedQuality {
 
 ### IMPLEMENTATION NOTES
 
-- 값이 낮을수록 더 높은 품질을 나타낼 수도 있고, 반대일 수도 있으나 일반적으로 100이 최고 품질입니다. 실제 동작은 구현체에 의존적입니다.
+- A lower value may indicate higher quality or vice versa, but generally 100 represents the highest quality. The actual behavior is implementation-dependent.
 
 ## LosslessQuality
 
 ```protobuf
-/// 무손실 품질 설정
-/// 무손실 압축을 사용하여 품질 저하 없이 데이터를 전송합니다.
+/// Lossless quality setting
+/// Transmits data without quality degradation using lossless compression.
 message LosslessQuality {
   // @constset: LosslessQualityMode
   uint32 mode = 1;
@@ -206,13 +206,13 @@ message LosslessQuality {
 ## Codec
 
 ```protobuf
-/// 비디오 코덱 설정
+/// Video codec settings
 message Codec {
-  /// FourCC 코드값 (Big-Endian)
+  /// FourCC code value (Big-Endian)
   // @constset: CodecFourCC
   fixed32 fourCC = 1;
 
-  /// 코덱 품질 설정
+  /// Codec quality setting
   oneof quality {
     ConstantBitrateQuality constantBitrate = 2;
     VariableBitrateQuality variableBitrate = 3;
@@ -221,24 +221,24 @@ message Codec {
     AutoQuality auto = 6;
   }
 
-  /// 초당 프레임 수. 값을 -1로 설정하는 경우 소스 (모니터)의 프레임레이트를 따릅니다.
+  /// Frames per second. Setting the value to -1 follows the source (monitor) frame rate.
   optional float frameRate = 9;
 
-  /// 해상도
+  /// Resolution
   SRSize size = 10;
 
-  /// 코덱별 추가 옵션 문자열 (예: "color-format: 'YUV444'; hardware-acceleration: 'true'; profile: 'high';")
+  /// Per-codec additional option string (e.g., "color-format: 'YUV444'; hardware-acceleration: 'true'; profile: 'high';")
   optional string options = 15;
 }
 ```
 
 ### DESCRIPTION
 
-- 비디오 프로젝션에 사용할 코덱, 품질, 해상도, 프레임레이트 등을 종합적으로 정의하는 구조체입니다.
-- 클라이언트는 `ProjectionRequest.preferredCodecs`에 이 구조체의 배열을 전달하고, 서버는 코덱 협상을 거쳐 최종 코덱을 결정합니다.
+- A structure that comprehensively defines the codec, quality, resolution, frame rate, and other settings for video projection.
+- The client passes an array of this structure in `ProjectionRequest.preferredCodecs`, and the server determines the final codec through codec negotiation.
 
 ### IMPLEMENTATION NOTES
 
-- `fourCC` 필드는 반드시 빅 엔디안 바이트 오더로 인코딩되어야 합니다.
-- `ConstantBitrateQuality`, `VariableBitrateQuality`를 제외한 품질 설정은 optional한 구현 사항입니다. 서버/클라이언트 구현체가 해당 품질 설정을 지원하지 않을 수 있습니다.
-- `options` 필드의 직렬화 형식은 `"key: 'value'; key2: 'value2'"` 패턴을 따르며, `!required` 접미사로 필수/선택 옵션을 구분합니다.
+- The `fourCC` field MUST be encoded in big-endian byte order.
+- Quality settings other than `ConstantBitrateQuality` and `VariableBitrateQuality` are optional implementation details. Server/client implementations MAY not support those quality settings.
+- The `options` field follows the serialization format `"key: 'value'; key2: 'value2'"`, with the `!required` suffix distinguishing mandatory from optional options.

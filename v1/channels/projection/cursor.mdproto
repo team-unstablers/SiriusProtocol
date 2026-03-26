@@ -8,8 +8,8 @@ import:
 
 # PROJECTION CURSOR
 
-커서(마우스 포인터) 이벤트의 구독 및 전달을 위한 메시지 정의입니다.
-클라이언트는 커서 이벤트를 구독하여 원격 호스트의 커서 위치 및 이미지를 동기화할 수 있습니다.
+Message definitions for cursor (mouse pointer) event subscription and delivery.
+Clients can subscribe to cursor events to synchronize the cursor position and image from the remote host.
 
 ---
 
@@ -19,8 +19,8 @@ import:
 
 ```optionset
 optionset SubscribeCursorEventsFlags: uint32 {
-  /// 커서 이미지를 캐싱하지 않을 것임을 서버에 알립니다.
-  /// 서버 구현체는 이 플래그가 설정된 경우, 커서 이미지를 항상 전송해야 합니다.
+  /// Informs the server that the client will not cache cursor images.
+  /// When this flag is set, the server implementation MUST always send cursor image data.
   option disableImageCache = 0x1;
 }
 ```
@@ -33,52 +33,52 @@ optionset SubscribeCursorEventsFlags: uint32 {
 
 ```protobuf
 message CursorMoveEvent {
-  /// 커서가 현재 위치한 디스플레이 ID.
-  /// 특수 값:
-  ///   - `-1`은 다른 메시지에서 '기본 디스플레이'를 의미했지만, 여기서는 사용하지 않습니다 (assertion).
-  ///   - `-2`는 전체 디스플레이 영역 (그래픽 세션의 전체 뷰포트)를 의미합니다.
+  /// The display ID where the cursor is currently located.
+  /// Special values:
+  ///   - `-1` means 'default display' in other messages, but MUST NOT be used here (assertion).
+  ///   - `-2` means the entire display area (the full viewport of the graphics session).
   uint32 displayID = 1;
 
-  /// 커서의 새로운 위치 (픽셀 단위).
+  /// The new cursor position (in pixels).
   SRPoint position = 2;
 }
 ```
 
 ### DESCRIPTION
 
-마우스 포인터의 위치가 변경되었음을 나타내는 이벤트입니다.
-서버는 클라이언트에게 이 이벤트를 전송하여 현재 커서 위치를 동기화할 수 있습니다.
+- Indicates that the mouse pointer position has changed.
+- The server sends this event to subscribed clients to synchronize the current cursor position.
 
 ### IMPLEMENTATION NOTES
 
-- 서버 구현체는 이 이벤트를 적절히 스로틀링하거나 버퍼링하여 전송하는 기법을 고려하는 것이 좋습니다. 너무 빈번한 커서 이동 이벤트는 네트워크 대역폭을 낭비할 수 있습니다.
+- Server implementations SHOULD consider throttling or buffering this event before sending. Excessively frequent cursor move events MAY waste network bandwidth.
 
 ## CursorImageEvent
 
 ```protobuf
 message CursorImageEvent {
-  /// 커서 유형 식별자.
-  /// 이 값은 서버 구현체 / OS마다 다를 수 있습니다. 커서 이미지 캐싱용으로만 사용하십시오.
+  /// Cursor type identifier.
+  /// This value MAY differ across server implementations and operating systems. Use it only for cursor image caching.
   uint64 cursorType = 1;
 
-  /// 커서 이미지의 MIME 타입 (예: "image/png")
+  /// MIME type of the cursor image (e.g., "image/png").
   string mimeType = 2;
 
-  /// 커서 이미지의 크기
+  /// Size of the cursor image.
   SRSize size = 3;
 
-  /// 커서 이미지 내에서 클릭 지점을 나타내는 좌표 (픽셀 단위, 이미지 좌상단 기준)
+  /// The click point (hotspot) within the cursor image (in pixels, relative to the top-left corner of the image).
   SRPoint hotspot = 4;
 
-  /// 커서 이미지 데이터 (바이너리)
-  /// `disableImageCache` 플래그를 설정하지 않는 한, 처음 한 번만 전송됩니다.
+  /// Cursor image data (binary).
+  /// Only sent once for each cursor type, unless the `disableImageCache` flag is set.
   optional bytes imageData = 5;
 }
 ```
 
 ### IMPLEMENTATION NOTES
 
-- 커서 이미지 데이터의 크기는 되도록 16KB 이하로 유지하는 것이 좋습니다. 너무 큰 이미지는 전송 지연을 유발할 수 있습니다.
+- Cursor image data SHOULD be kept under 16 KB whenever possible. Excessively large images MAY cause transmission delays.
 
 ---
 
@@ -87,7 +87,7 @@ message CursorImageEvent {
 ## SubscribeCursorEventsRequest
 
 ```protobuf
-/// 커서 이벤트 구독을 요청합니다.
+/// Requests subscription to cursor events.
 // @opcode: 0x80A1
 message SubscribeCursorEventsRequest {
   uint64 requestId = 1;
@@ -99,64 +99,64 @@ message SubscribeCursorEventsRequest {
 
 ### DESCRIPTION
 
-클라이언트가 서버에 커서 이벤트 수신을 구독할 때 사용합니다.
-서버는 `SubscribeCursorEventsResponse`로 구독 식별자를 반환합니다.
+- Used by the client to subscribe to cursor events from the server.
+- When the server receives this request, it MUST respond with a `SubscribeCursorEventsResponse` containing a subscription identifier.
 
 ## SubscribeCursorEventsResponse
 
 ```protobuf
-/// 커서 이벤트 구독 요청에 대한 응답입니다.
+/// Response to a cursor event subscription request.
 // @opcode: 0x80A2
 message SubscribeCursorEventsResponse {
   uint64 requestId = 1;
-  /// 구독 식별자.
+  /// Subscription identifier.
   SRUUID subscriptionId = 2;
 }
 ```
 
 ### DESCRIPTION
 
-`SubscribeCursorEventsRequest`에 대한 응답 메시지입니다.
-반환된 `subscriptionId`는 이후 구독 해제 시 사용됩니다.
+- Sent by the server in response to a `SubscribeCursorEventsRequest`.
+- The returned `subscriptionId` is used when unsubscribing from cursor events.
 
 ## UnsubscribeCursorEventsRequest
 
 ```protobuf
-/// 커서 이벤트 구독 해제를 요청합니다.
+/// Requests unsubscription from cursor events.
 // @opcode: 0x80A3
 message UnsubscribeCursorEventsRequest {
   uint64 requestId = 1;
-  /// 구독 식별자.
+  /// Subscription identifier.
   SRUUID subscriptionId = 2;
 }
 ```
 
 ### DESCRIPTION
 
-클라이언트가 기존 커서 이벤트 구독을 해제할 때 사용합니다.
+- Used by the client to cancel an existing cursor event subscription.
 
 ## UnsubscribeCursorEventsResponse
 
 ```protobuf
-/// 커서 이벤트 구독 해제 요청에 대한 응답입니다.
+/// Response to a cursor event unsubscription request.
 // @opcode: 0x80A4
 message UnsubscribeCursorEventsResponse {
   uint64 requestId = 1;
-  /// 구독 식별자.
+  /// Subscription identifier.
   SRUUID subscriptionId = 2;
-  /// 구독 해제 성공 여부.
+  /// Whether the unsubscription was successful.
   bool isSuccess = 3;
 }
 ```
 
 ### DESCRIPTION
 
-`UnsubscribeCursorEventsRequest`에 대한 응답 메시지입니다.
+- Sent by the server in response to an `UnsubscribeCursorEventsRequest`.
 
 ## CursorEvent
 
 ```protobuf
-/// 커서 이벤트 컨테이너 메시지입니다.
+/// Container message for cursor events.
 // @opcode: 0x80A5
 message CursorEvent {
   oneof event {
@@ -168,5 +168,5 @@ message CursorEvent {
 
 ### DESCRIPTION
 
-서버가 구독 중인 클라이언트에게 전송하는 커서 이벤트 컨테이너입니다.
-커서 이동 이벤트(`CursorMoveEvent`) 또는 커서 이미지 변경 이벤트(`CursorImageEvent`)를 포함합니다.
+- Sent by the server to subscribed clients as a cursor event container.
+- Contains either a cursor move event (`CursorMoveEvent`) or a cursor image change event (`CursorImageEvent`).

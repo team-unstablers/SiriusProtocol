@@ -8,7 +8,7 @@ import:
 
 # PROJECTION SOURCE
 
-화면 전송(Projection)의 대상이 되는 소스(디스플레이, 특정 영역, 단일 창 등)를 정의합니다.
+Defines the sources for screen projection (displays, specific regions, single windows, etc.).
 
 ---
 
@@ -18,7 +18,7 @@ import:
 
 ```optionset
 optionset SingleWindowProjectionSourceFlags: uint32 {
-  /// 소스 윈도우의 변화(이동, 크기 조절 등)를 추적하여 프로젝션 영역을 업데이트합니다.
+  /// Tracks changes to the source window (movement, resizing, etc.) and updates the projection area.
   option followSource = 1;
 }
 ```
@@ -27,12 +27,12 @@ optionset SingleWindowProjectionSourceFlags: uint32 {
 
 ```optionset
 optionset ProjectionSourceFlags: uint32 {
-  /// 호스트 화면의 커서를 표시합니다.
-  /// NOTE: 이 플래그는 서버 구현체 및 정책 구성에 따라 무시될 수 있습니다.
+  /// Shows the cursor on the host screen.
+  /// NOTE: This flag MAY be ignored depending on the server implementation and policy configuration.
   option showCursor = 0x1;
 
-  /// 호스트의 콘솔 화면에 커튼 (화면 가림막)을 표시합니다.
-  /// NOTE: 이 플래그는 서버 구현체 및 정책 구성에 따라 무시될 수 있습니다.
+  /// Shows a curtain (screen blanking) on the host's console screen.
+  /// NOTE: This flag MAY be ignored depending on the server implementation and policy configuration.
   option showCurtain = 0x2;
 }
 ```
@@ -44,11 +44,11 @@ optionset ProjectionSourceFlags: uint32 {
 ## EntireDisplayProjectionSource
 
 ```protobuf
-/// 전체 디스플레이를 프로젝션할 때 사용합니다.
+/// Used when projecting an entire display.
 message EntireDisplayProjectionSource {
-  /// 디스플레이 ID.
-  /// -1로 설정하는 경우 기본 디스플레이를 의미합니다.
-  /// -2로 설정하는 경우 전체 디스플레이 영역을 의미합니다.
+  /// Display ID.
+  /// Setting to -1 refers to the default display.
+  /// Setting to -2 refers to the entire display area.
   sint32 displayId = 1;
 }
 ```
@@ -56,14 +56,14 @@ message EntireDisplayProjectionSource {
 ## DisplayRegionProjectionSource
 
 ```protobuf
-/// 특정 디스플레이 내의 수동 지정된 영역을 프로젝션할 때 사용합니다.
+/// Used when projecting a manually specified region within a specific display.
 message DisplayRegionProjectionSource {
-  /// 디스플레이 ID.
-  /// -1로 설정하는 경우 기본 디스플레이를 의미합니다.
-  /// -2로 설정하는 경우 전체 디스플레이 영역을 의미합니다.
+  /// Display ID.
+  /// Setting to -1 refers to the default display.
+  /// Setting to -2 refers to the entire display area.
   sint32 displayId = 1;
 
-  /// 프로젝션할 사각형 영역 (픽셀 단위)
+  /// Rectangular region to project (in pixels)
   SRRect region = 2;
 }
 ```
@@ -71,14 +71,14 @@ message DisplayRegionProjectionSource {
 ## SingleWindowProjectionSource
 
 ```protobuf
-/// 단일 윈도우(창)를 프로젝션할 때 사용합니다.
+/// Used when projecting a single window.
 message SingleWindowProjectionSource {
-  /// 프로젝션할 윈도우의 고유 ID (Handle)
+  /// Unique ID (handle) of the window to project
   optional sint64 windowId = 1;
 
-  // TODO: 프로세스 ID, 윈도우 타이틀 등 추가적인 윈도우 식별 방법 추가 검토
+  // TODO: consider adding additional window identification methods such as process ID, window title, etc.
 
-  /// 윈도우 프로젝션 관련 플래그
+  /// Flags related to window projection
   // @optionset: SingleWindowProjectionSourceFlags
   uint32 flags = 16;
 }
@@ -87,7 +87,7 @@ message SingleWindowProjectionSource {
 ## ProjectionSource
 
 ```protobuf
-/// 프로젝션 소스 정의 (디스플레이, 영역, 또는 단일 창 중 하나)
+/// Projection source definition (one of: display, region, or single window)
 message ProjectionSource {
   oneof value {
     EntireDisplayProjectionSource entireDisplay = 1;
@@ -95,7 +95,7 @@ message ProjectionSource {
     SingleWindowProjectionSource singleWindow = 3;
   }
 
-  /// 프로젝션 소스 공통 플래그
+  /// Common flags for projection sources
   // @optionset: ProjectionSourceFlags
   uint32 flags = 16;
 }
@@ -103,6 +103,6 @@ message ProjectionSource {
 
 ### DESCRIPTION
 
-- 프로젝션할 소스를 정의하는 최상위 구조체입니다.
-- `entireDisplay`(전체 디스플레이), `region`(디스플레이 내 특정 영역), `singleWindow`(단일 윈도우) 중 하나를 선택합니다.
-- `flags`는 커서 표시, 커튼 표시 등 프로젝션 소스 공통 옵션을 지정합니다.
+- The top-level structure that defines the source for projection.
+- Selects one of `entireDisplay` (entire display), `region` (specific region within a display), or `singleWindow` (single window).
+- `flags` specifies common projection source options such as cursor display and curtain display.

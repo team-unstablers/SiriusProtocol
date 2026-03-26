@@ -7,7 +7,7 @@ import:
 
 # PROJECTION TYPEDEFS
 
-프로젝션 관련 메시지에서 공통으로 사용되는 기본 데이터 구조체 정의입니다.
+Common data structure definitions shared across projection-related messages.
 
 ---
 
@@ -16,32 +16,32 @@ import:
 ## SRRect
 
 ```protobuf
-/// 사각형 영역을 정의합니다.
+/// Defines a rectangular area.
 message SRRect {
-  /// 왼쪽 위 모서리 X 좌표
+  /// X coordinate of the top-left corner
   double x = 1;
-  /// 왼쪽 위 모서리 Y 좌표
+  /// Y coordinate of the top-left corner
   double y = 2;
-  /// 사각형의 너비
+  /// Width of the rectangle
   double width = 3;
-  /// 사각형의 높이
+  /// Height of the rectangle
   double height = 4;
 }
 ```
 
 ### DESCRIPTION
 
-- 사각형 영역을 정의하는 데 사용됩니다.
-- 좌표계는 일반적인 그래픽 좌표계를 따릅니다. (0, 0)은 왼쪽 위 모서리이며, x 값이 증가할수록 오른쪽, y 값이 증가할수록 아래쪽으로 이동합니다.
+- Used to define a rectangular area.
+- Follows the standard graphics coordinate system. (0, 0) is the top-left corner, with x increasing to the right and y increasing downward.
 
 ## SRPoint
 
 ```protobuf
-/// 2D 공간에서의 점을 정의합니다.
+/// Defines a point in 2D space.
 message SRPoint {
-  /// X 좌표
+  /// X coordinate
   double x = 1;
-  /// Y 좌표
+  /// Y coordinate
   double y = 2;
 }
 ```
@@ -49,11 +49,11 @@ message SRPoint {
 ## SRSize
 
 ```protobuf
-/// 2D 공간에서의 크기를 정의합니다.
+/// Defines a size in 2D space.
 message SRSize {
-  /// 너비
+  /// Width
   double x = 1;
-  /// 높이
+  /// Height
   double y = 2;
 }
 ```
