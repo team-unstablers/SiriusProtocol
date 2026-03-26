@@ -7,10 +7,10 @@ import:
 
 # CLIPBOARD CHANNEL
 
-클립보드 동기화를 위한 채널 및 메시지 정의입니다.
-서버와 클라이언트 양쪽에서 클립보드 변경 이벤트를 구독하고, 필요 시 온디맨드로 데이터를 요청할 수 있습니다.
+Message definitions for clipboard synchronization.
+Both the server and client can subscribe to clipboard change events and request data on demand as needed.
 
-클립보드 채널은 양방향 동기화를 지원하므로, 모든 메시지는 서버와 클라이언트 어느 쪽에서든 전송할 수 있습니다.
+The clipboard channel supports bidirectional synchronization, so all messages can be sent by either the server or the client.
 
 ---
 
@@ -20,8 +20,8 @@ import:
 
 ```optionset
 optionset ClipboardDataFlags: uint32 {
-  /// 클립보드 데이터가 생략되었음을 나타냅니다.
-  /// (예: 대용량 데이터, 보안상 이유 등)
+  /// Indicates that the clipboard data has been omitted.
+  /// (e.g., due to large data size, security reasons, etc.)
   option omitted = 0x1;
 }
 ```
@@ -33,15 +33,15 @@ optionset ClipboardDataFlags: uint32 {
 ## ClipboardData
 
 ```protobuf
-/// 클립보드 아이템의 개별 표현(representation)을 나타냅니다.
-/// 하나의 클립보드 아이템은 같은 데이터를 여러 형식으로 표현할 수 있습니다.
-/// (예: text/plain + text/html + text/rtf)
+/// Represents an individual representation of a clipboard item.
+/// A single clipboard item can represent the same data in multiple formats.
+/// (e.g., text/plain + text/html + text/rtf)
 message ClipboardData {
-  /// MIME 타입 (예: "text/plain", "image/png")
+  /// MIME type (e.g., "text/plain", "image/png")
   string contentType = 1;
-  /// 원본 데이터의 크기 (바이트 단위)
+  /// Size of the original data in bytes
   uint64 size = 2;
-  /// 클립보드 데이터 본문. omitted 플래그가 설정된 경우 생략될 수 있습니다.
+  /// Clipboard data body. MAY be omitted if the omitted flag is set.
   optional bytes data = 3;
 
   // @optionset: ClipboardDataFlags
@@ -51,26 +51,26 @@ message ClipboardData {
 
 ### IMPLEMENTATION NOTES
 
-- 아래 조건에 해당하는 데이터는 `flags`에 `omitted`를 설정하고 `data` 필드를 생략해야 합니다.
-  수신 측은 필요 시 Transfer 채널을 별도로 열어 데이터 수신을 요청할 수 있습니다. (하단 'DEALING WITH LARGE-SIZE DATA' 참조)
-    - 128KB를 초과하는 크기의 데이터
+- Data that meets the following conditions MUST have the `omitted` flag set in `flags` and the `data` field omitted.
+  The receiving side MAY open a separate Transfer channel to request the data if needed. (See 'DEALING WITH LARGE SIZE DATA' below.)
+    - Data exceeding 128KB in size
 
 ## ClipboardItem
 
 ```protobuf
-/// 하나의 클립보드 아이템을 나타냅니다.
-/// 각 아이템은 동일한 데이터의 여러 표현(representation)을 포함할 수 있습니다.
+/// Represents a single clipboard item.
+/// Each item can contain multiple representations of the same data.
 message ClipboardItem {
-  /// 이 아이템의 표현 목록 (예: text/plain, text/html이 동시에 포함될 수 있음)
+  /// List of representations for this item (e.g., text/plain and text/html may both be included)
   repeated ClipboardData representations = 1;
 }
 ```
 
 ### DESCRIPTION
 
-- 하나의 클립보드 복사 동작은 하나 이상의 `ClipboardItem`을 포함할 수 있습니다.
-- 단일 아이템 복사 (텍스트, 이미지 등): `ClipboardItem` 1개, 내부에 여러 `ClipboardData` 표현
-- 다중 아이템 복사 (파일 여러 개 등): 각 파일마다 `ClipboardItem` 1개씩
+- A single clipboard copy operation can contain one or more `ClipboardItem`s.
+- Single item copy (text, image, etc.): 1 `ClipboardItem` with multiple `ClipboardData` representations inside
+- Multi-item copy (multiple files, etc.): 1 `ClipboardItem` per file
 
 ---
 
@@ -79,7 +79,7 @@ message ClipboardItem {
 ## SubscribeClipboardRequest
 
 ```protobuf
-/// 클립보드 변경 이벤트의 구독을 요청합니다.
+/// Requests subscription to clipboard change events.
 // @opcode: 0x8001
 message SubscribeClipboardRequest {
   uint64 requestId = 1;
@@ -89,93 +89,92 @@ message SubscribeClipboardRequest {
 
 ### DESCRIPTION
 
-- 상대방의 클립보드 변경 이벤트를 수신하기 위해 구독을 요청하는 메시지입니다.
-- 구독이 수락되면 `SubscribeClipboardResponse`로 `subscriptionId`가 반환됩니다.
+- Sent to request subscription to the remote peer's clipboard change events.
+- If the subscription is accepted, a `subscriptionId` is returned via `SubscribeClipboardResponse`.
 
 ## SubscribeClipboardResponse
 
 ```protobuf
-/// SubscribeClipboardRequest에 대한 응답 메시지입니다.
+/// Response to a SubscribeClipboardRequest.
 // @opcode: 0x8002
 message SubscribeClipboardResponse {
   uint64 requestId = 1;
-  /// 구독 요청 처리 성공 여부. 거부된 경우 false.
+  /// Whether the subscription request was successful. false if rejected.
   bool isSuccess = 2;
-  /// 구독 식별자. 이후 이벤트 수신 및 구독 해제에 사용됩니다.
-  /// isSuccess가 false인 경우 유효하지 않을 수 있습니다.
+  /// Subscription identifier. Used for subsequent event delivery and unsubscription.
+  /// MAY be invalid if isSuccess is false.
   SRUUID subscriptionId = 3;
 }
 ```
 
 ### DESCRIPTION
 
-- `SubscribeClipboardRequest`에 대한 응답 메시지입니다.
-- `isSuccess`가 `true`인 경우, `subscriptionId`는 구독 해제(`UnsubscribeClipboardRequest`) 시 사용됩니다.
-- `isSuccess`가 `false`인 경우, 구독이 거부된 것이며 `subscriptionId`는 유효하지 않습니다.
+- The response to a `SubscribeClipboardRequest`.
+- If `isSuccess` is `true`, the `subscriptionId` is used when unsubscribing (`UnsubscribeClipboardRequest`).
+- If `isSuccess` is `false`, the subscription was rejected and the `subscriptionId` is not valid.
 
 ## UnsubscribeClipboardRequest
 
 ```protobuf
-/// 클립보드 변경 이벤트의 구독을 해제합니다.
+/// Unsubscribes from clipboard change events.
 // @opcode: 0x8003
 message UnsubscribeClipboardRequest {
   uint64 requestId = 1;
-  /// 해제할 구독의 식별자.
+  /// Identifier of the subscription to cancel.
   SRUUID subscriptionId = 2;
 }
 ```
 
 ### DESCRIPTION
 
-- 이전에 등록한 클립보드 이벤트 구독을 해제하는 메시지입니다.
+- Sent to cancel a previously registered clipboard event subscription.
 
 ## UnsubscribeClipboardResponse
 
 ```protobuf
-/// UnsubscribeClipboardRequest에 대한 응답 메시지입니다.
+/// Response to an UnsubscribeClipboardRequest.
 // @opcode: 0x8004
 message UnsubscribeClipboardResponse {
   uint64 requestId = 1;
-  /// 해제된 구독의 식별자.
+  /// Identifier of the cancelled subscription.
   SRUUID subscriptionId = 2;
-  /// 구독 해제 성공 여부.
+  /// Whether the unsubscription was successful.
   bool isSuccess = 3;
 }
 ```
 
 ### DESCRIPTION
 
-- `UnsubscribeClipboardRequest`에 대한 응답 메시지입니다.
+- The response to an `UnsubscribeClipboardRequest`.
 
 ## ClipboardEvent
 
 ```protobuf
-/// 클립보드 변경 이벤트.
+/// Clipboard change event.
 // @opcode: 0x8005
 message ClipboardEvent {
-  /// 이 이벤트가 속한 구독의 식별자.
+  /// Identifier of the subscription this event belongs to.
   SRUUID subscriptionId = 1;
-  /// 클립보드 변경이 발생한 시각 (밀리초 단위 Unix timestamp)
+  /// Timestamp of when the clipboard change occurred (Unix timestamp in milliseconds)
   uint64 timestamp = 2;
-  /// 클립보드 아이템 목록.
+  /// List of clipboard items.
   repeated ClipboardItem items = 3;
 }
 ```
 
 ### IMPLEMENTATION NOTES
 
-- 아래 조건에 해당하는 데이터는 각 구현체에서 클립보드 이벤트 전송을 거부할 수 있습니다.
-    - 구현체가 보안상 민감하다고 판단하는 데이터
+- Implementations MAY refuse to send clipboard events for data that is deemed security-sensitive.
 
 ### DESCRIPTION
 
-- 구독 중인 상대방의 클립보드 내용이 변경되었을 때 전송되는 이벤트입니다.
-- `SubscribeClipboardRequest`로 구독한 이후에만 수신됩니다.
+- Sent when the subscribed remote peer's clipboard contents have changed.
+- Only received after subscribing via `SubscribeClipboardRequest`.
 
 ## GetClipboardRequest
 
 ```protobuf
-/// 클립보드 데이터를 온디맨드로 요청합니다.
+/// Requests clipboard data on demand.
 // @opcode: 0x8006
 message GetClipboardRequest {
   uint64 requestId = 1;
@@ -184,50 +183,50 @@ message GetClipboardRequest {
 
 ### DESCRIPTION
 
-- `ClipboardEvent`에서 `omitted` 처리된 데이터를 별도로 요청하거나, 현재 클립보드 전체 내용을 조회할 때 사용하는 메시지입니다.
+- Used to separately request data that was marked as `omitted` in a `ClipboardEvent`, or to retrieve the full current clipboard contents.
 
 ### IMPLEMENTATION NOTES
 
-- 구현체는 보안 정책에 따라 응답을 거부할 수 있습니다. 이 경우 `GetClipboardResponse.success`를 `false`로 설정합니다.
+- Implementations MAY reject the response based on security policy. In such cases, `GetClipboardResponse.success` MUST be set to `false`.
 
 ## GetClipboardResponse
 
 ```protobuf
-/// GetClipboardRequest에 대한 응답 메시지입니다.
+/// Response to a GetClipboardRequest.
 // @opcode: 0x8007
 message GetClipboardResponse {
   uint64 requestId = 1;
-  /// 요청 처리 성공 여부. 거부된 경우 false.
+  /// Whether the request was processed successfully. false if rejected.
   bool success = 2;
-  /// 클립보드 아이템 목록.
+  /// List of clipboard items.
   repeated ClipboardItem items = 3;
 }
 ```
 
 ### DESCRIPTION
 
-- `GetClipboardRequest`에 대한 응답 메시지입니다.
-- `success`가 `false`인 경우 `data`는 비어있을 수 있습니다.
+- The response to a `GetClipboardRequest`.
+- If `success` is `false`, `items` MAY be empty.
 
 ---
 
 # DEALING WITH LARGE SIZE DATA
 
-`ClipboardData`의 `omitted` 플래그가 설정된 경우, 수신 측은 Transfer 채널을 별도로 열어 데이터를 요청할 수 있습니다.
-이 때, 채널 오픈 시 args는 다음과 같이 설정되어야 합니다:
+When the `omitted` flag is set on a `ClipboardData`, the receiving side MAY open a separate Transfer channel to request the data.
+In this case, the `args` in the channel open request MUST be set as follows:
 
 ```typescript
 // see transfer.mdproto
 type TransferChannelArgs = [
-    purpose: 'file-transfer' | 'clipboard-data' | string, // 전송 목적
-    direction: 'upload' | 'download', // 전송 방향
-    name: string, // 전송 대상의 이름 (예: 파일명, 클립보드 데이터 설명 등)
+    purpose: 'file-transfer' | 'clipboard-data' | string, // transfer purpose
+    direction: 'upload' | 'download', // transfer direction
+    name: string, // name of the transfer target (e.g., filename, clipboard data description, etc.)
 ];
 
 const clipboardDataTransferArgs: TransferChannelArgs = [
     'clipboard-data',
     'download',
-    // clipboardItem[2]의 representation[1]을 수신받고자 한다
+    // requesting representation[1] of clipboardItem[2]
     '2', // itemIndex
     '1'  // representationIndex
 ];
