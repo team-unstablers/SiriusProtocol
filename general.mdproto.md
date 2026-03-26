@@ -27,12 +27,13 @@ For example, a message with opcode `0x0001` and a payload length of 10 bytes is 
 ## SiriusProtocolVersion
 
 ```constset
+/// The lowest 1 byte is reserved for identifying variants such as development versions.
 constset SiriusProtocolVersion: uint32 {
   /// v1.0 (draft version)
-  const v1_0_draft = 0x0000FFFF;
+  const v1_0_draft = 0x00010000;
 
   /// v1.0
-  const v1_0 = 0x00010000;
+  const v1_0 = 0x00010001;
 }
 ```
 
