@@ -1,21 +1,21 @@
 # MDProto Style Guide
 
-이 문서는 `msgdef/` 디렉토리 내 `.mdproto` 파일의 작성 규칙을 정의합니다.
+This document defines the authoring rules for `.mdproto` files in the `msgdef/` directory.
 
 ---
 
-## 1. 파일 전체 구조
+## 1. File Structure
 
-모든 `.mdproto` 파일은 아래 순서를 따릅니다. 해당 없는 섹션은 생략할 수 있습니다.
+Every `.mdproto` file MUST follow the section order below. Sections that do not apply MAY be omitted.
 
 ```
 ---
 (YAML front-matter)
 ---
 
-# <문서 제목>
+# <Document Title>
 
-<도입 설명>
+<Intro paragraph>
 
 ---
 
@@ -35,123 +35,123 @@
 
 ---
 
-# <부록 섹션>          (선택, 복수 가능)
+# <Appendix Section>          (optional, may repeat)
 
 ```
 
-### 각 섹션의 역할
+### Section Roles
 
-| 섹션 | 내용 |
-|------|------|
-| `# <문서 제목>` | 파일의 첫 H1. 이 파일이 다루는 채널/기능 이름 |
-| `# CONSTANTS` | `constset` / `optionset` 블록 정의 |
-| `# ENUM TYPES` | protobuf `enum` 정의 (해당 시) |
-| `# STRUCTS` | opcode가 없는 보조 `message` 타입 (데이터 구조체) |
-| `# MESSAGES` | opcode가 있는 실제 프로토콜 메시지 |
-| `# <부록 섹션>` | (선택) 채널/기능 전체에 걸치는 보충 설명 |
+| Section | Purpose |
+|---------|---------|
+| `# <Document Title>` | First H1 in the file. Names the channel or feature this file covers. |
+| `# CONSTANTS` | `constset` / `optionset` block definitions |
+| `# ENUM TYPES` | Protobuf `enum` definitions (if applicable) |
+| `# STRUCTS` | Helper `message` types without opcodes (data structures) |
+| `# MESSAGES` | Protocol messages with opcodes |
+| `# <Appendix Section>` | (Optional) Supplementary explanation spanning the entire channel/feature |
 
-### 부록 섹션 (선택)
+### Appendix Sections (Optional)
 
-`# MESSAGES` 이후에, 특정 타입이나 메시지에 종속되지 않는 **채널/기능 레벨의 보충 설명**이 필요한 경우 추가 H1 섹션을 둘 수 있습니다.
+After `# MESSAGES`, additional H1 sections MAY be added for **channel/feature-level supplementary explanation** that is not specific to a single type or message.
 
-- 개별 메시지의 `### IMPLEMENTATION NOTES`에 넣기엔 범위가 넓고, 도입 설명에 넣기엔 너무 긴 내용에 적합합니다.
-- 섹션 이름은 내용을 명확히 나타내는 대문자 영문 구문을 사용합니다.
-- 예: `# DEALING WITH LARGE-SIZE DATA`, `# CHANNEL ARGUMENTS`, `# SYNOPSIS`
-
----
-
-## 2. 헤딩 레벨 규칙
-
-| 레벨 | 용도 | 예시 |
-|------|------|------|
-| `#` (H1) | 문서 제목 + 대섹션 구분자 | `# CONSTANTS`, `# MESSAGES` |
-| `##` (H2) | 개별 타입/메시지 이름 또는 소그룹 | `## AuthChallenge`, `## DisplayKind` |
-| `###` (H3) | 부속 설명 섹션 | `### DESCRIPTION`, `### IMPLEMENTATION NOTES` |
-
-- H1은 **문서 제목**, **대섹션 구분자**(CONSTANTS / ENUM TYPES / STRUCTS / MESSAGES), 그리고 필요 시 **부록 섹션**에 사용합니다.
-- 각 대섹션 사이에는 `---` 수평선을 삽입합니다.
+- Use these for content that is too broad for an individual `### IMPLEMENTATION NOTES` but too detailed for the intro paragraph.
+- Section names MUST be uppercase English phrases that clearly describe the content.
+- Examples: `# DEALING WITH LARGE-SIZE DATA`, `# CHANNEL ARGUMENTS`, `# SYNOPSIS`
 
 ---
 
-## 3. 도입 설명
+## 2. Heading Level Rules
 
-H1 문서 제목 바로 아래에 1~3문장으로 이 파일의 역할을 서술합니다.
+| Level | Purpose | Examples |
+|-------|---------|----------|
+| `#` (H1) | Document title + major section dividers | `# CONSTANTS`, `# MESSAGES` |
+| `##` (H2) | Individual type/message name or subgroup | `## AuthChallenge`, `## DisplayKind` |
+| `###` (H3) | Subsections within a type/message | `### DESCRIPTION`, `### IMPLEMENTATION NOTES` |
+
+- H1 is used for the **document title**, **major section dividers** (CONSTANTS / ENUM TYPES / STRUCTS / MESSAGES), and optionally **appendix sections**.
+- A `---` horizontal rule MUST be inserted between each major section.
+
+---
+
+## 3. Intro Paragraph
+
+Immediately below the H1 document title, provide 1–3 sentences describing the role of this file.
 
 ```markdown
 # PROJECTION AUDIO MESSAGES
 
-오디오 프로젝션(오디오 전송 및 제어)을 위한 메시지 정의입니다.
-비디오 프로젝션과 유사한 세션 모델을 따르며, 다양한 오디오 소스와 코덱 설정을 지원합니다.
+Message definitions for audio projection (audio streaming and control).
+Follows a session model similar to video projection, supporting various audio sources and codec configurations.
 ```
 
-- 프로토콜 흐름이나 프레이밍 같은 메타 설명은 `general.mdproto` 도입부 또는 별도 문서에 집중합니다.
-- 각 feature 파일에 메타 설명을 분산시키지 않습니다.
+- Protocol flow, framing, and other meta-level descriptions SHOULD be concentrated in `general.mdproto` or a dedicated document.
+- Do not scatter meta-level descriptions across individual feature files.
 
 ---
 
-## 4. 개별 타입/메시지 단위 구조
+## 4. Per-Type / Per-Message Structure
 
 ```markdown
 ## <TypeName>
 
-\```protobuf          (또는 constset / optionset)
+\```protobuf          (or constset / optionset)
 ...
 \```
 
-### DESCRIPTION          ← 필수
+### DESCRIPTION          ← required
 
-### IMPLEMENTATION NOTES  ← 선택
+### IMPLEMENTATION NOTES  ← optional
 ```
 
-### DESCRIPTION (필수)
+### DESCRIPTION (Required)
 
-- 모든 메시지(`# MESSAGES` 섹션)와 enum(`# ENUM TYPES` 섹션)에 필수입니다.
-- 1~3문장으로 이 타입이 무엇이고, 언제 사용되는지를 서술합니다.
-- `constset` / `optionset`은 블록 내 `///` 주석이 충분히 자기 설명적이라면 DESCRIPTION 섹션을 생략할 수 있습니다. 단, 추가적인 맥락 설명이 필요하면 DESCRIPTION을 작성합니다.
-- `# STRUCTS` 섹션의 보조 타입은 블록 내 `///` 주석이 충분하다면 생략할 수 있습니다.
+- MUST be present for every message (in `# MESSAGES`) and every enum (in `# ENUM TYPES`).
+- 1–3 sentences describing what this type is and when it is used.
+- For `constset` / `optionset`: MAY be omitted if the `///` comments within the block are sufficiently self-explanatory. If additional context is needed, include a DESCRIPTION.
+- For helper types in `# STRUCTS`: MAY be omitted if the `///` comments within the block are sufficient.
 
-### IMPLEMENTATION NOTES (선택)
+### IMPLEMENTATION NOTES (Optional)
 
-- 구현체가 주의해야 할 사항이 있을 때만 작성합니다.
-- 예: 특정 필드의 기본값 처리, 서버/클라이언트 간 동작 차이, 보안 고려사항 등.
-
----
-
-## 5. 코드 블록 규칙
-
-### 5-1. 블록 분리 원칙
-
-- **메시지 (opcode 있는 것)**: 원칙적으로 **1 메시지 = 1 블록**. 밀접하게 관련된 request/response 쌍은 같은 H2 아래 한 블록에 묶는 것을 허용합니다.
-- **보조 타입 (opcode 없는 것)**: 밀접한 관련 타입은 같은 H2 아래 한 블록에 묶을 수 있습니다.
-- **constset / optionset**: **1 타입 = 1 블록**.
-
-### 5-2. 들여쓰기
-
-- `protobuf` / `constset` / `optionset` 블록 내부는 **스페이스 2칸** 들여쓰기를 사용합니다.
-
-### 5-3. 주석 스타일
-
-| 용도 | 형식 | 예시 |
-|------|------|------|
-| 필드/상수 설명 (doc comment) | `///` | `/// 세션 식별자` |
-| 어노테이션 | `//` | `// @opcode: 0x8001` |
-| 참조 어노테이션 | `//` | `// @constset: AudioFourCC` |
-| 인라인 참고 | `//` | `uint32 flags = 16; // reserved` |
-
-- `///` (doc comment)과 `//` (일반 주석/어노테이션)은 역할에 따라 구분합니다. 같은 용도에 두 스타일을 혼용하지 않습니다.
-- `@opcode`는 `message` 선언 **바로 위** 줄에 배치합니다.
-- `@constset`, `@optionset`은 해당 필드 **바로 위** 줄에 배치합니다.
-
-### 5-4. 비격식 표현 금지
-
-- 코드 블록 및 DESCRIPTION / IMPLEMENTATION NOTES 내에 이모티콘, 유머, 비격식 표현을 사용하지 않습니다.
-- TODO는 `// TODO: <설명>` 형식으로 통일합니다.
+- Include only when there are implementation concerns that consumers MUST be aware of.
+- Examples: default value handling for specific fields, behavioral differences between server and client, security considerations, etc.
 
 ---
 
-## 6. 모범 예시
+## 5. Code Block Rules
 
-아래는 이 스타일 가이드를 따르는 파일의 전체 예시입니다.
+### 5-1. Block Separation Principle
+
+- **Messages (with opcode):** One message per block as a rule. Closely related request/response pairs MAY be grouped under the same H2 in a single block.
+- **Helper types (without opcode):** Closely related types MAY be grouped under the same H2 in a single block.
+- **constset / optionset:** One type per block.
+
+### 5-2. Indentation
+
+- Code inside `protobuf` / `constset` / `optionset` blocks MUST use **2-space** indentation.
+
+### 5-3. Comment Style
+
+| Purpose | Format | Example |
+|---------|--------|---------|
+| Field/constant description (doc comment) | `///` | `/// Session identifier` |
+| Annotation | `//` | `// @opcode: 0x8001` |
+| Reference annotation | `//` | `// @constset: AudioFourCC` |
+| Inline note | `//` | `uint32 flags = 16; // reserved` |
+
+- `///` (doc comment) and `//` (general comment/annotation) serve distinct roles. Do not mix styles for the same purpose.
+- `@opcode` MUST be placed on the line **immediately above** the `message` declaration.
+- `@constset` and `@optionset` MUST be placed on the line **immediately above** the corresponding field.
+
+### 5-4. No Informal Language
+
+- Emojis, humor, and informal language MUST NOT appear in code blocks, DESCRIPTION, or IMPLEMENTATION NOTES.
+- TODOs MUST follow the format `// TODO: <description>`.
+
+---
+
+## 6. Reference Example
+
+Below is a complete file example that conforms to this style guide.
 
 ```markdown
 ---
@@ -163,7 +163,7 @@ import:
 
 # EXAMPLE CHANNEL MESSAGES
 
-예시 채널의 메시지 정의입니다. 서버와 클라이언트 간 예시 데이터를 교환하는 데 사용됩니다.
+Message definitions for the example channel. Used to exchange example data between the server and client.
 
 ---
 
@@ -173,9 +173,9 @@ import:
 
 \```constset
 constset ExampleKind: uint32 {
-  /// 기본 타입
+  /// Default type
   const default = 0;
-  /// 확장 타입
+  /// Extended type
   const extended = 1;
 }
 \```
@@ -187,11 +187,11 @@ constset ExampleKind: uint32 {
 ## ExamplePayload
 
 \```protobuf
-/// 예시 데이터 페이로드
+/// Example data payload
 message ExamplePayload {
-  /// 데이터 식별자
+  /// Data identifier
   uint32 id = 1;
-  /// 데이터 내용
+  /// Data content
   bytes data = 2;
 }
 \```
@@ -203,12 +203,12 @@ message ExamplePayload {
 ## ExampleRequest
 
 \```protobuf
-/// 예시 데이터를 요청합니다.
+/// Requests example data from the server.
 // @opcode: 0x8001
 message ExampleRequest {
-  /// 요청 식별자
+  /// Request identifier
   uint64 requestId = 1;
-  /// 요청할 데이터 종류
+  /// The kind of data to request
   // @constset: ExampleKind
   uint32 kind = 2;
 }
@@ -216,28 +216,110 @@ message ExampleRequest {
 
 ### DESCRIPTION
 
-- 클라이언트가 서버에게 예시 데이터를 요청할 때 사용하는 메시지입니다.
-- 서버는 이 메시지를 수신한 후 `ExampleResponse`로 응답합니다.
+Used by the client to request example data from the server.
+When the server receives this message, it MUST respond with an `ExampleResponse`.
 
 ## ExampleResponse
 
 \```protobuf
-/// 예시 데이터 요청에 대한 응답입니다.
+/// Response to an example data request.
 // @opcode: 0x8002
 message ExampleResponse {
-  /// 요청 식별자 (ExampleRequest의 requestId와 일치)
+  /// Request identifier (MUST match the requestId from ExampleRequest)
   uint64 requestId = 1;
-  /// 응답 데이터
+  /// Response data
   ExamplePayload payload = 2;
 }
 \```
 
 ### DESCRIPTION
 
-- `ExampleRequest`에 대한 응답 메시지입니다.
-- `requestId`는 원본 요청의 식별자와 일치해야 합니다.
+Sent by the server in response to an `ExampleRequest`.
+The `requestId` MUST match the identifier from the original request so the client can correlate it.
 
 ### IMPLEMENTATION NOTES
 
-- 서버가 요청한 `kind`를 지원하지 않는 경우, `payload`를 비워서 응답합니다.
+If the server does not support the requested `kind`, it SHOULD respond with an empty `payload` rather than rejecting the request.
 ```
+
+---
+
+## 7. Language
+
+All text within `.mdproto` files MUST be written in **English**. This applies to:
+
+- **Document title** (H1) and **intro paragraph**
+- **Section headings** (H2, H3)
+- **`### DESCRIPTION`** and **`### IMPLEMENTATION NOTES`** prose
+- **Doc comments** (`///`) inside code blocks
+- **Inline comments** (`//`) inside code blocks (excluding annotations like `@opcode`)
+- **Appendix sections** and any other prose
+
+YAML front-matter fields (package, import paths, etc.) are inherently English and require no special treatment.
+
+### 7-1. Tone and Style
+
+DESCRIPTION and IMPLEMENTATION NOTES sections MUST use **RFC-style keywords** with a **readable, approachable tone**:
+
+- Use uppercase keywords **MUST**, **MUST NOT**, **SHOULD**, **SHOULD NOT**, and **MAY** to indicate requirement levels.
+- Keep sentences concise but natural — avoid overly legalistic or stiff phrasing.
+- Provide context around the keywords so the reader understands *why*, not just *what*. For example, prefer "When the server receives this request, it MUST respond with..." over a bare "The server MUST respond with...".
+- Use third-person or passive voice, but favor whichever reads more naturally in context.
+
+**Example (DESCRIPTION):**
+
+```markdown
+### DESCRIPTION
+
+Used by the client to request example data from the server.
+When the server receives this message, it MUST respond with an `ExampleResponse`.
+```
+
+**Example (doc comment):**
+
+```protobuf
+/// Request identifier
+uint64 requestId = 1;
+/// The kind of data to request
+// @constset: ExampleKind
+uint32 kind = 2;
+```
+
+---
+
+## 8. Migration Guide (Korean → English)
+
+This section defines the procedure for translating existing Korean `.mdproto` files to English.
+
+### 8-1. Scope
+
+All Korean text in `.mdproto` files MUST be translated to English, including:
+
+- Intro paragraphs
+- Doc comments (`///`)
+- Inline comments (`//`)
+- `### DESCRIPTION` and `### IMPLEMENTATION NOTES` sections
+- Appendix section prose
+
+### 8-2. Translation Rules
+
+1. **Translate and rewrite simultaneously.** When translating DESCRIPTION and IMPLEMENTATION NOTES, convert the tone to RFC-style (MUST/SHOULD/MAY) at the same time. Do not produce a literal translation followed by a separate style pass.
+2. **Doc comments** (`///`): Translate to concise English. One line per field description is preferred.
+3. **Preserve structure.** Do not add, remove, or reorder fields, messages, or sections. Only the language of the text changes.
+4. **Preserve annotations.** `@opcode`, `@constset`, `@optionset` annotations MUST NOT be modified.
+5. **Ambiguous or unclear originals:** If the meaning of the Korean original is ambiguous or potentially incorrect, do NOT guess. Flag it to the user for clarification before proceeding.
+
+### 8-3. Terminology
+
+Most Korean terms in the codebase have straightforward English equivalents. The following mappings are canonical:
+
+| Korean | English |
+|--------|---------|
+| 원격 제어 / 원격 데스크톱 | remote desktop |
+| 세션 | session |
+| 채널 | channel |
+| 핸드셰이크 | handshake |
+| 인증 | authentication |
+| 재전송 공격 | replay attack |
+
+For all other terms, use natural English translations consistent with the protocol domain.
