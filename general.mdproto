@@ -7,18 +7,18 @@ import:
 
 # GENERAL MESSAGE DEFINITIONS
 
-Sirius 프로토콜의 메인 채널에서 사용되는 일반 메시지 정의입니다.
-기능별 메시지 정의는 각 기능의 mdproto 파일에 별도로 정의되어 있습니다.
+General message definitions used on the main channel of the Sirius protocol.
+Feature-specific message definitions are located in their respective mdproto files.
 
-모든 Sirius 프로토콜 메시지에는 2바이트 고정 길이 opcode가 할당되며, Big-Endian 형식으로 인코딩됩니다.
-메시지 프레이밍 구조는 다음과 같습니다:
+Every Sirius protocol message is assigned a fixed 2-byte opcode, encoded in Big-Endian byte order.
+The message framing structure is as follows:
 
 - 2 bytes: opcode (Big-Endian)
-- 4 bytes: payload length (Big-Endian, opcode 및 length 필드 제외)
-- N bytes: payload (Protobuf v3 직렬화 데이터)
+- 4 bytes: payload length (Big-Endian, excluding the opcode and length fields)
+- N bytes: payload (Protobuf v3 serialized data)
 
-예를 들어, opcode가 `0x0001`이고 payload 길이가 10바이트인 메시지는
-`00 01 | 00 00 00 0A | [10 bytes payload]`로 인코딩됩니다.
+For example, a message with opcode `0x0001` and a payload length of 10 bytes is encoded as
+`00 01 | 00 00 00 0A | [10 bytes payload]`.
 
 ---
 
@@ -38,29 +38,29 @@ constset SiriusProtocolVersion: uint32 {
 
 ### DESCRIPTION
 
-- Sirius 프로토콜의 버전을 나타내는 상수 집합입니다.
-- 현재 사용 중인 버전은 `v1_0_draft`입니다. `v1_0`은 정식 릴리스 시 사용될 예정입니다.
+- A set of constants representing the Sirius protocol version.
+- The currently active version is `v1_0_draft`. `v1_0` is reserved for the official release.
 
 ## ClosureCode
 
 ```constset
 constset ClosureCode: uint32 {
-  /// 정상적으로 세션이 종료되었습니다.
+  /// The session was closed normally.
   const successful = 0;
 
-  /// 프로토콜 오류로 인해 세션이 종료되었습니다.
-  /// 부정한 메시지를 수신하였거나, 프로토콜 규격을 준수하지 않은 경우에 발생합니다.
-  /// 필요한 경우, message 필드를 통해 추가적인 정보를 제공할 수 있습니다.
+  /// The session was closed due to a protocol error.
+  /// This occurs when an invalid message is received or the protocol specification is violated.
+  /// Additional information MAY be provided via the message field if needed.
   const protocolError = 1;
 
-  /// 서버 내부 오류로 인해 세션이 종료되었습니다.
+  /// The session was closed due to an internal server error.
   const internalServerError = 2;
 
-  /// 인증에 실패하여 세션이 종료되었습니다.
+  /// The session was closed due to an authentication failure.
   const authenticationFailed = 3;
 
-  /// 세션 시트를 마련하는데 실패하였습니다.
-  /// 보통 이 오류는 서버의 자원 부족 / 최대 연결 수 초과 등의 이유로 발생합니다.
+  /// Failed to allocate a session seat.
+  /// This typically occurs due to insufficient server resources or exceeding the maximum connection limit.
   const sessionAllocationFailed = 4;
 }
 ```
@@ -82,11 +82,12 @@ enum NoticeSeverity {
 
 ### DESCRIPTION
 
-- `ServerNotice` 메시지의 심각도 수준을 나타냅니다.
-- `INFO`: 일반 정보 메시지
-- `WARNING`: 경고 메시지, 주의가 필요함
-- `ERROR`: 오류 메시지, 문제가 발생했음을 나타냄
-- `FATAL`: 치명적인 오류 메시지, 더 이상 세션을 유지할 수 없음
+Indicates the severity level of a `ServerNotice` message.
+
+- `INFO`: General informational message
+- `WARNING`: Warning message requiring attention
+- `ERROR`: Error message indicating that a problem has occurred
+- `FATAL`: Fatal error message indicating that the session can no longer be maintained
 
 ---
 
@@ -95,7 +96,7 @@ enum NoticeSeverity {
 ## ServerNotice
 
 ```protobuf
-/// 서버가 클라이언트에게 안내 사항을 전달하는 메시지
+/// A message sent by the server to deliver notices to the client.
 // @opcode: 0x0001
 message ServerNotice {
   NoticeSeverity severity = 1;
@@ -107,69 +108,69 @@ message ServerNotice {
 
 ### DESCRIPTION
 
-- 서버가 클라이언트에게 안내 사항을 전달할 때 사용하는 메시지입니다.
-- 핸드셰이크 거부, 인증 실패, 프로토콜 오류 등 다양한 상황에서 오류 및 경고를 전달하는 데 사용됩니다.
-- `severity`가 `FATAL`인 경우, 서버는 이 메시지 전송 후 연결을 종료할 수 있습니다.
+- Used by the server to deliver notices to the client.
+- This message is used to communicate errors and warnings in various situations, such as handshake rejection, authentication failure, and protocol errors.
+- When the `severity` is `FATAL`, the server MAY terminate the connection after sending this message.
 
 ### IMPLEMENTATION NOTES
 
-- `code` 필드는 애플리케이션 레벨에서 정의하는 숫자 코드입니다. Sirius 프로토콜 자체에서는 코드 값의 범위만 권장하며, 구체적인 의미는 서버 구현체가 결정합니다.
-- `timestamp`는 Unix epoch 기준 밀리초 단위입니다.
+- The `code` field is a numeric code defined at the application level. The Sirius protocol itself only recommends a range for code values; the specific meaning is determined by the server implementation.
+- The `timestamp` field is in milliseconds since the Unix epoch.
 
 ## ClientHello
 
 ```protobuf
-/// 클라이언트가 서버에 접속할 때 보내는 초기 핸드셰이크 메시지
+/// Initial handshake message sent by the client when connecting to the server.
 // @opcode: 0x0002
 message ClientHello {
   // @constset: SiriusProtocolVersion
   uint32 protocolVersion = 1;
 
-  // TODO: optional로 변경 필요
+  // TODO: should be changed to optional
   string agentName = 2;
 }
 ```
 
 ### DESCRIPTION
 
-- 클라이언트가 서버에 접속할 때 보내는 초기 핸드셰이크 메시지입니다.
-- 메인 채널이 열린 직후 클라이언트가 가장 먼저 전송해야 하며, 서버는 이 메시지를 수신한 후 `ServerHello` 또는 `ServerNotice`로 응답합니다.
-- `protocolVersion`을 통해 클라이언트가 지원하는 프로토콜 버전을 서버에 알립니다.
+- The initial handshake message sent by the client when connecting to the server.
+- The client MUST send this message immediately after the main channel is opened. Upon receiving it, the server responds with either a `ServerHello` or a `ServerNotice`.
+- The `protocolVersion` field informs the server of the protocol version supported by the client.
 
 ### IMPLEMENTATION NOTES
 
-- 서버 구현체는 `protocolVersion`을 확인하여 호환되는 버전인지 검증해야 합니다. 호환되지 않는 경우, `ServerNotice`(FATAL)를 전송하고 연결을 종료해야 합니다.
+- Server implementations MUST validate the `protocolVersion` to ensure compatibility. If the version is incompatible, the server MUST send a `ServerNotice` with `FATAL` severity and close the connection.
 
 ## ServerHello
 
 ```protobuf
-/// 서버가 클라이언트의 접속 요청에 응답할 때 보내는 메시지
+/// Response message sent by the server to the client's connection request.
 // @opcode: 0x0003
 message ServerHello {
   // @constset: SiriusProtocolVersion
   uint32 protocolVersion = 1;
 
-  /// 서버가 지원하는 기능 목록 (SiriusFeatureID UUID 배열)
+  /// List of features supported by the server (array of SiriusFeatureID UUIDs)
   repeated SRUUID supportedFeatures = 2;
 
-  /// 서버 이름 (서버 정책에 따라 생략 가능)
+  /// Server name (MAY be omitted depending on server policy)
   optional string serverName = 3;
 
-  /// 서버 공지 메시지 (서버 정책에 따라 생략 가능)
+  /// Message of the day (MAY be omitted depending on server policy)
   optional string motd = 4;
 }
 ```
 
 ### DESCRIPTION
 
-- `ClientHello`에 대한 서버의 응답 메시지입니다.
-- `protocolVersion`을 통해 서버가 사용할 프로토콜 버전을 클라이언트에 알립니다.
-- `supportedFeatures`는 서버가 지원하는 기능들의 UUID 목록(SiriusFeatureID 참조)을 포함합니다.
+- The server's response to a `ClientHello` message.
+- The `protocolVersion` field informs the client of the protocol version the server will use.
+- The `supportedFeatures` field contains a list of UUIDs representing the features supported by the server (see SiriusFeatureID).
 
 ## Goodbye
 
 ```protobuf
-/// 접속 종료 메시지
+/// Connection closure message.
 // @opcode: 0x0004
 message Goodbye {
   // @constset: ClosureCode
@@ -180,10 +181,10 @@ message Goodbye {
 
 ### DESCRIPTION
 
-- 서버 또는 클라이언트가 접속을 종료할 때 보내는 메시지입니다.
-- `code`는 종료 사유를 나타내며(ClosureCode 참조), `message`는 선택적으로 추가 설명을 담을 수 있습니다.
-- 이 메시지를 수신한 측은 즉시 연결을 종료해야 합니다.
+- Sent by either the server or the client when closing the connection.
+- The `code` field indicates the reason for closure (see ClosureCode), and the `message` field MAY optionally contain additional explanation.
+- Upon receiving this message, the recipient MUST close the connection immediately.
 
 ### IMPLEMENTATION NOTES
 
-- Goodbye는 양방향 메시지입니다. 서버와 클라이언트 어느 쪽에서든 전송할 수 있습니다.
+- Goodbye is a bidirectional message. It can be sent by either the server or the client.

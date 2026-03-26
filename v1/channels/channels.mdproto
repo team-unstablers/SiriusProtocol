@@ -7,12 +7,12 @@ import:
 
 # CHANNEL MANAGEMENT MESSAGES
 
-채널은 서버와 클라이언트 간의 다중화된 통신 경로를 제공합니다.
-각 기능(feature)은 하나 이상의 채널을 통해 데이터를 주고받으며,
-채널은 트랜스포트 프로토콜(QUIC 등)의 멀티플렉싱 단위인 스트림(stream)에 1:1로 매핑됩니다.
+Channels provide multiplexed communication paths between the server and the client.
+Each feature exchanges data through one or more channels,
+and each channel maps 1:1 to a stream — the multiplexing unit of the transport protocol (e.g., QUIC).
 
-채널은 서버 또는 클라이언트 어느 쪽에서든 열고 닫을 수 있습니다.
-메인 채널(연결 수립 직후 열리는 첫 번째 스트림)은 별도의 채널 오픈 절차 없이 사용됩니다.
+Channels can be opened and closed by either the server or the client.
+The main channel (the first stream opened immediately after connection establishment) is used without a separate channel opening procedure.
 
 ---
 
@@ -21,66 +21,66 @@ import:
 ## ChannelStartRequest
 
 ```protobuf
-/// 새로운 채널 오픈을 요청하는 메시지
+/// Message requesting to open a new channel.
 // @opcode: 0x0021
 message ChannelStartRequest {
-  /// 이 채널이 수행할 기능의 ID (SiriusFeatureID 참조)
+  /// ID of the feature this channel will serve (see SiriusFeatureID)
   SRUUID featureId = 1;
 
-  /// 채널 고유 식별자
+  /// Unique channel identifier
   SRUUID channelId = 2;
 
-  /// 기능별 추가 인자
+  /// Additional arguments specific to the feature
   repeated string args = 3;
 }
 ```
 
 ### DESCRIPTION
 
-- 새로운 기능 채널을 열기 위해 전송하는 메시지입니다.
-- 새 스트림이 열린 직후, 스트림을 연 쪽이 이 메시지를 상대방에게 전송합니다.
-- 상대방은 `ChannelStartResponse`로 수락 또는 거부를 응답합니다.
+- Sent to request the opening of a new feature channel.
+- Immediately after a new stream is opened, the side that opened the stream sends this message to the remote peer.
+- The remote peer responds with a `ChannelStartResponse` to accept or reject the request.
 
 ### IMPLEMENTATION NOTES
 
-- `featureId`와 `channelId`가 누락된 요청은 거부되어야 합니다.
-- 수신 측은 `featureId`가 자신이 지원하는 기능인지 검증한 후 응답해야 합니다.
-- `args`의 의미는 기능(feature)마다 다르게 정의됩니다.
+- Requests with missing `featureId` or `channelId` MUST be rejected.
+- The receiving side MUST verify that the `featureId` corresponds to a feature it supports before responding.
+- The meaning of `args` is defined differently for each feature.
 
 ## ChannelStartResponse
 
 ```protobuf
-/// 채널 오픈 요청에 대한 응답 메시지
+/// Response message to a channel open request.
 // @opcode: 0x0022
 message ChannelStartResponse {
-  /// 채널 오픈 수락 여부
+  /// Whether the channel open request was accepted
   bool success = 1;
-  // TODO: 거부 사유 및 오류 코드 필드 추가
+  // TODO: add rejection reason and error code fields
 }
 ```
 
 ### DESCRIPTION
 
-- `ChannelStartRequest`에 대한 응답 메시지입니다.
-- `success`가 `true`이면 채널이 성공적으로 열린 것이며, 이후 해당 스트림을 통해 기능별 메시지를 교환할 수 있습니다.
-- `success`가 `false`이면 채널 오픈이 거부된 것이며, 요청 측은 해당 스트림을 닫아야 합니다.
+- The response to a `ChannelStartRequest`.
+- If `success` is `true`, the channel has been successfully opened, and feature-specific messages can be exchanged through the stream.
+- If `success` is `false`, the channel open request was rejected, and the requesting side MUST close the stream.
 
 ## ChannelCloseRequest
 
 ```protobuf
-/// 채널 닫기를 요청하는 메시지
+/// Message requesting to close a channel.
 // @opcode: 0x0023
 message ChannelCloseRequest {
-  // TODO: 닫기 사유 필드 추가
+  // TODO: add closure reason field
 }
 ```
 
 ### DESCRIPTION
 
-- 열려 있는 채널을 닫기 위해 전송하는 메시지입니다.
-- 서버 또는 클라이언트 어느 쪽에서든 전송할 수 있습니다.
+- Sent to close an open channel.
+- Can be sent by either the server or the client.
 
 ### IMPLEMENTATION NOTES
 
-- 기능(feature)에 따라 채널 관리 정책이 다를 수 있습니다. 일부 기능은 특정 채널이 항상 열려 있어야 하고, 다른 기능은 필요에 따라 채널을 열고 닫을 수 있습니다.
-- 기능에 따라 채널 오픈 이후 Sirius 프레이밍이 아닌 다른 프로토콜로 업그레이드될 수 있습니다. 이 경우 Sirius는 채널 오픈 이후 데이터 전송에 관여하지 않습니다.
+- Channel management policies MAY vary by feature. Some features require certain channels to remain open at all times, while others allow channels to be opened and closed on demand.
+- Depending on the feature, the stream MAY be upgraded to a protocol other than Sirius framing after the channel is opened. In such cases, Sirius is not involved in data transmission after the channel opening.
