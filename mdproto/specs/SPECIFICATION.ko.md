@@ -1,10 +1,10 @@
 # MDProto 사양서 (초안 1.0)
 
-MDProto(`.mdproto`)는 Markdown 문서 내에서 Protocol Buffers 메시지를 정의하기 위한 문학적 프로그래밍(Literate Programming) 형식입니다. 이를 통해 개발자는 프로토콜 문서와 정의를 단일 파일에서 유지 관리하여 일관성과 가독성을 높일 수 있습니다.
+MDProto(`.mdproto.md`)는 Markdown 문서 내에서 Protocol Buffers 메시지를 정의하기 위한 문학적 프로그래밍(Literate Programming) 형식입니다. 이를 통해 개발자는 프로토콜 문서와 정의를 단일 파일에서 유지 관리하여 일관성과 가독성을 높일 수 있습니다.
 
 ## 1. 파일 구조
 
-`.mdproto` 파일은 다음 두 부분으로 구성됩니다.
+`.mdproto.md` 파일은 다음 두 부분으로 구성됩니다.
 1.  **YAML Frontmatter**: 메타데이터, 패키지 정보, 임포트 등을 정의합니다.
 2.  **Markdown Body**: 문서 내용과 정의를 위한 코드 블록을 포함합니다.
 

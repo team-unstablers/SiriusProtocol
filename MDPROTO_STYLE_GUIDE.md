@@ -1,12 +1,12 @@
 # MDProto Style Guide
 
-This document defines the authoring rules for `.mdproto` files in this repo.
+This document defines the authoring rules for `.mdproto.md` files in this repo.
 
 ---
 
 ## 1. File Structure
 
-Every `.mdproto` file MUST follow the section order below. Sections that do not apply MAY be omitted.
+Every `.mdproto.md` file MUST follow the section order below. Sections that do not apply MAY be omitted.
 
 ```
 ---
@@ -84,7 +84,7 @@ Message definitions for audio projection (audio streaming and control).
 Follows a session model similar to video projection, supporting various audio sources and codec configurations.
 ```
 
-- Protocol flow, framing, and other meta-level descriptions SHOULD be concentrated in `general.mdproto` or a dedicated document.
+- Protocol flow, framing, and other meta-level descriptions SHOULD be concentrated in `general.mdproto.md` or a dedicated document.
 - Do not scatter meta-level descriptions across individual feature files.
 
 ---
@@ -246,7 +246,7 @@ If the server does not support the requested `kind`, it SHOULD respond with an e
 
 ## 7. Language
 
-All text within `.mdproto` files MUST be written in **English**. This applies to:
+All text within `.mdproto.md` files MUST be written in **English**. This applies to:
 
 - **Document title** (H1) and **intro paragraph**
 - **Section headings** (H2, H3)
@@ -289,11 +289,11 @@ uint32 kind = 2;
 
 ## 8. Migration Guide (Korean → English)
 
-This section defines the procedure for translating existing Korean `.mdproto` files to English.
+This section defines the procedure for translating existing Korean `.mdproto.md` files to English.
 
 ### 8-1. Scope
 
-All Korean text in `.mdproto` files MUST be translated to English, including:
+All Korean text in `.mdproto.md` files MUST be translated to English, including:
 
 - Intro paragraphs
 - Doc comments (`///`)

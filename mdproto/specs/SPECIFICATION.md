@@ -1,10 +1,10 @@
 # MDProto Specification (Draft 1.0)
 
-MDProto(`.mdproto`) is a literate programming format for defining Protocol Buffers messages within Markdown documentation. It allows developers to maintain protocol documentation and definitions in a single file, ensuring consistency and readability.
+MDProto(`.mdproto.md`) is a literate programming format for defining Protocol Buffers messages within Markdown documentation. It allows developers to maintain protocol documentation and definitions in a single file, ensuring consistency and readability.
 
 ## 1. File Structure
 
-An `.mdproto` file consists of two parts:
+An `.mdproto.md` file consists of two parts:
 1.  **YAML Frontmatter**: Defines metadata, package information, and imports.
 2.  **Markdown Body**: Contains documentation and code blocks for definitions.
 

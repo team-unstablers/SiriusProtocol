@@ -216,7 +216,7 @@ When the `omitted` flag is set on a `ClipboardData`, the receiving side MAY open
 In this case, the `args` in the channel open request MUST be set as follows:
 
 ```typescript
-// see transfer.mdproto
+// see transfer.mdproto.md
 type TransferChannelArgs = [
     purpose: 'file-transfer' | 'clipboard-data' | string, // transfer purpose
     direction: 'upload' | 'download', // transfer direction
