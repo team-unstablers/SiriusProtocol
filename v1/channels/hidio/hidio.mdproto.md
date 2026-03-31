@@ -7,6 +7,7 @@ import:
   - "v1/channels/hidio/hid_mouse.proto"
   - "v1/channels/hidio/hid_pen.proto"
   - "v1/channels/hidio/hid_raw.proto"
+  - "v1/channels/hidio/hid_touch.proto"
 ---
 
 # HIDIO CHANNEL MESSAGES
@@ -37,6 +38,8 @@ message HIDEvent {
     PenProximityEvent penProximityEvent = 19;
     PenMoveEvent penMoveEvent = 20;
     PenButtonEvent penButtonEvent = 21;
+
+    TouchEvent touchEvent = 22;
   }
 }
 ```
@@ -44,7 +47,7 @@ message HIDEvent {
 ### DESCRIPTION
 
 A container type that can hold various HID events.
-The `oneof event` field selectively includes one of keyboard, mouse, pen, or raw events.
+The `oneof event` field selectively includes one of keyboard, mouse, pen, touch, or raw events.
 
 ---
 
