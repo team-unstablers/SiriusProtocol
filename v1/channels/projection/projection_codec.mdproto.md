@@ -32,6 +32,9 @@ constset CodecFourCC: uint32 {
 
   /// 'WEBP': WebP
   const webp = 0x57454250;
+
+  /// 'VP80': VP8
+  const vp80 = 0x56503830;
 }
 ```
 
