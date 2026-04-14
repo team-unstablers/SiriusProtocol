@@ -96,6 +96,7 @@ constset CodecOptionKey: string {
 
 ```constset
 constset CodecOptionValue: string {
+  const kColorFormatAuto = "auto";
   const kColorFormatYUV420 = "yuv420";
   const kColorFormatYUV444 = "yuv444";
   const kColorFormatRGB888 = "rgb888";
@@ -104,6 +105,7 @@ constset CodecOptionValue: string {
   const kHardwareAccelerationAuto = "auto";
   const kHardwareAccelerationFalse = "false";
 
+  const kProfileAuto = "auto";
   const kProfileH264High10 = "h264_high10";
   const kProfileH264High = "h264_high";
   const kProfileH264Main = "h264_main";
@@ -117,6 +119,7 @@ constset CodecOptionValue: string {
   const kColorRangeLimited = "limited";
   const kColorRangeFull = "full";
 
+  const kDisplayDensityAuto = "auto";
   const kDisplayDensityPerformance = "performance";
   const kDisplayDensityBest = "best";
 
