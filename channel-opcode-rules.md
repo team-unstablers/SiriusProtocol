@@ -121,6 +121,8 @@ The Projection channel encompasses Display, Window, Cursor, and Audio related fu
 │ 0x8045  │ UnsubscribeDisplayChangesRequest                      │
 │ 0x8046  │ UnsubscribeDisplayChangesResponse                     │
 │ 0x8047  │ DisplayChangedEvent                                   │
+│ 0x8048  │ DisplayTransactionRequest                             │
+│ 0x8049  │ DisplayTransactionResponse                            │
 └─────────┴───────────────────────────────────────────────────────┘
 
 ┌─────────────────────────────────────────────────────────────────┐
