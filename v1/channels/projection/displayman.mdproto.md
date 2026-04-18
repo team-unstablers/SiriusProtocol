@@ -72,6 +72,24 @@ constset DisplayDynamicRange: uint32 {
 }
 ```
 
+## DisplayRotation
+
+```constset
+constset DisplayRotation: uint32 {
+  /// No rotation (landscape)
+  const deg0 = 0;
+  
+  /// 90 degrees clockwise (portrait)
+  const deg90 = 90;
+  
+  /// 180 degrees (landscape, upside down)
+  const deg180 = 180;
+  
+  /// 270 degrees clockwise (portrait, upside down)
+  const deg270 = 270;
+}
+```
+
 ## DisplayChangeEventType
 
 ```optionset
@@ -102,6 +120,32 @@ optionset DisplayListRequestFlags: uint32 {
 ---
 
 # STRUCTS
+
+## DisplaySpec
+
+```protobuf
+/// Describes a desired display mode (resolution, refresh rate, scale factor).
+message DisplaySpec {
+  /// Viewport size in points. Pixel size is `resolution * scaleFactor`.
+  SRSize resolution = 1;
+  /// Refresh rate in Hz (e.g. 60, 59.94). Zero indicates unspecified.
+  double refreshRate = 2;
+  /// Scale factor (e.g. 1.0 for standard, 2.0 for Retina).
+  double scaleFactor = 3;
+  
+  /// Additional metadata.
+  /// All metadata keys are optional and treated as hints only.
+  /// Implementation-specific keys SHOULD follow the reverse domain name format.
+  /// (e.g. `com.contoso.superremote.native-display-mode-id`)
+  map<string, string> metadata = 15;
+}
+```
+
+### DESCRIPTION
+
+Describes a display mode requested by the client. The server picks the
+display mode most compatible with this spec; exact matching rules are
+implementation-defined.
 
 ## DisplayState
 
@@ -158,7 +202,7 @@ message DisplayInfo {
   /// Depending on the server implementation, platform, or display type, this value
   /// may differ from the actual display's capabilities or may not be provided.
   /// (0, negative, or highly abnormal values may occur)
-  float refreshRate = 6;
+  double refreshRate = 6;
 
   /// Display color depth
   // @constset: DisplayColorDepth
@@ -182,7 +226,14 @@ message DisplayInfo {
   /// If this field is not set, Protobuf behavior will default it to 0.0.
   /// Therefore, implementations MUST treat 0.0 as equivalent to 1.0 (no scaling).
   /// It is RECOMMENDED to set this field explicitly whenever possible.
-  float scaleFactor = 11;
+  double scaleFactor = 11;
+  
+  /// Display rotation (degrees)
+  // @constset: DisplayRotation
+  uint32 rotation = 12;
+  
+  /// Supported display specs
+  repeated DisplaySpec supportedSpecs = 13;
 
   /// Display thumbnail
   /// This field is only provided when 'includeThumbnails' is set in the DisplayListRequest flags.
@@ -201,6 +252,9 @@ message DisplayInfo {
   map<string, string> metadata = 15;
 
   uint32 flags = 16;
+  
+  /// Identifier carried by virtual displays created through the Projection channel.
+  optional SRUUID virtualDisplayIdentifier = 17;
 }
 ```
 
@@ -208,6 +262,7 @@ message DisplayInfo {
 
 - When `scaleFactor` is 0.0, implementations MUST treat it as 1.0. The Swift implementation (`DisplayInfo.init(from:)`) also performs this conversion.
 - When `colorProfile` is a value not defined in the `DisplayColorProfile` constset, it is treated as a custom color profile.
+- `virtualDisplayIdentifier` is present only for virtual displays created by the client through the Projection channel's `VirtualDisplayCreate` operation. Clients MAY use this field to correlate a `DisplayInfo` entry back to a virtual display they requested.
 
 ---
 
