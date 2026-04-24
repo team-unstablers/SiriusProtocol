@@ -60,14 +60,71 @@ constset ClosureCode: uint32 {
   /// The session was closed due to an internal server error.
   const internalServerError = 2;
 
-  /// The session was closed due to an authentication failure.
-  const authenticationFailed = 3;
-
-  /// Failed to allocate a session seat.
-  /// This typically occurs due to insufficient server resources or exceeding the maximum connection limit.
-  const sessionAllocationFailed = 4;
+  // Values 3 and 4 are reserved (previously assigned to authenticationFailed and
+  // sessionAllocationFailed; those conditions are now reported via ServerNoticeCode,
+  // followed by a Goodbye carrying one of the codes above).
 }
 ```
+
+## ServerNoticeCode
+
+```constset
+constset ServerNoticeCode: uint32 {
+  // MISC (0x0700 ~ 0x0FFF)
+
+  /// "Jackpot!" - a non-normative easter-egg notice code.
+  /// MUST NOT be used outside of genuine easter-egg contexts.
+  /// See the "JACKPOT (NON-NORMATIVE)" appendix for details.
+  const jackpot                 = 0x0777;
+
+  // CLIENT FAULT (0x4000 ~ 0x4FFF)
+
+  /// The server received a message of a type it does not support or recognize.
+  /// This is typically used when a server that does not support a newer version of the
+  /// Sirius protocol receives a message introduced in that newer version.
+  const unsupportedOpcode       = 0x4005;
+
+  /// The client selected an authentication method that the server does not support.
+  const unsupportedAuthMethod   = 0x4006;
+
+  /// The nonce in an AuthRequest does not match the nonce from the corresponding AuthChallenge.
+  const nonceMismatch           = 0x4007;
+
+  /// The peer did not respond within the configured timeout.
+  const timeout                 = 0x4008;
+
+  /// Authentication failed.
+  const authenticationFailed    = 0x4009;
+
+  /// The payload length of an incoming frame exceeds the protocol-defined limit.
+  /// See the "FRAME SIZE LIMIT" section of the protocol introduction.
+  const frameTooLarge           = 0x400A;
+
+  // SERVER FAULT (0x5000 ~ 0x5FFF)
+
+  /// An unexpected error occurred on the server.
+  const internalServerError     = 0x5000;
+
+  /// The server could not allocate a session seat, typically due to insufficient
+  /// resources or exceeding the maximum number of concurrent sessions.
+  const sessionAllocationFailed = 0x5001;
+}
+```
+
+### DESCRIPTION
+
+A set of codes used in the `code` field of `ServerNotice` messages.
+Codes are grouped by the originator of the fault: the `0x4000`-range indicates a
+client-side fault (e.g., a malformed request or failed authentication), while the
+`0x5000`-range indicates a server-side fault (e.g., resource exhaustion).
+
+### IMPLEMENTATION NOTES
+
+- Implementations MAY use codes outside the defined set for application-specific purposes,
+  but SHOULD prefer the protocol-defined codes when applicable.
+- The `0x0000`-`0x3FFF` range is reserved for future protocol use and MUST NOT be used
+  by application-specific codes, except for the `0x0700`-`0x0FFF` sub-range which is
+  reserved for non-normative codes.
 
 ---
 
@@ -104,6 +161,7 @@ Indicates the severity level of a `ServerNotice` message.
 // @opcode: 0x0001
 message ServerNotice {
   NoticeSeverity severity = 1;
+  // @constset: ServerNoticeCode
   uint32 code = 2;
   string message = 3;
   uint64 timestamp = 4;
@@ -118,8 +176,16 @@ message ServerNotice {
 
 ### IMPLEMENTATION NOTES
 
-- The `code` field is a numeric code defined at the application level. The Sirius protocol itself only recommends a range for code values; the specific meaning is determined by the server implementation.
+- The `code` field carries a `ServerNoticeCode` value. Implementations MAY use codes outside the defined set for application-specific purposes, but SHOULD prefer the protocol-defined codes when applicable.
 - The `timestamp` field is in milliseconds since the Unix epoch.
+- When using a `FATAL`-severity notice to close the connection, the server MUST follow the sequence below:
+  1. Send this `ServerNotice` with `severity = FATAL` and an appropriate `code`.
+  2. Send a `Goodbye` with an appropriate `ClosureCode` (`protocolError` for client-induced faults; `internalServerError` for server-side faults).
+  3. Close the transport connection.
+- Representative mappings of this pattern:
+  - Authentication failure: `ServerNoticeCode.authenticationFailed` → `Goodbye(ClosureCode.protocolError)`
+  - Session allocation failure: `ServerNoticeCode.sessionAllocationFailed` → `Goodbye(ClosureCode.internalServerError)`
+  - Frame size limit violation: `ServerNoticeCode.frameTooLarge` → `Goodbye(ClosureCode.protocolError)`
 
 ## ClientHello
 
@@ -192,3 +258,45 @@ message Goodbye {
 ### IMPLEMENTATION NOTES
 
 - Goodbye is a bidirectional message. It can be sent by either the server or the client.
+
+---
+
+# JACKPOT (NON-NORMATIVE)
+
+> Wait - why is this even a thing?
+
+This appendix describes the `ServerNoticeCode.jackpot` easter egg. It is non-normative
+and provided for amusement purposes only. Implementations MAY ignore this section
+entirely.
+
+Some server implementations perform a "lottery draw" for each incoming connection and
+deliver the `jackpot` notice code to winning clients.
+
+## DRAW MECHANICS
+
+The specific mechanics of the draw are implementation-defined. Representative examples:
+
+- A per-connection scratch-off draw triggered at connect time.
+- A periodic draw performed on each server tick.
+- A milestone draw triggered by a specific event (e.g., the Nth connection).
+- ...
+
+The winning probability is implementation-defined, but it SHOULD be low enough that
+winning feels genuinely surprising. A probability around **1/777** is RECOMMENDED.
+(The number itself looks meaningful, doesn't it?)
+
+## REWARDS
+
+Winning clients MAY receive implementation-defined rewards. Representative examples:
+
+- The server MAY attach a congratulatory message in `ServerNotice.message`.
+- The server MAY guarantee highest-priority scheduling for the winning session
+  for the duration of that session.
+- ...
+
+## DISCLAIMER
+
+This is a joke. **The `jackpot` code MUST NOT be used outside of genuine easter-egg
+contexts.**
+
+This easter egg MUST NOT be enabled in enterprise environments. Those users are serious.

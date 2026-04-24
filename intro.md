@@ -222,13 +222,23 @@ All Sirius messages use the following fixed framing structure:
 
 The `Payload Len` field MUST NOT exceed **16 MiB** (16 × 1024 × 1024 = 16,777,216 bytes).
 
-- A receiver that encounters a frame declaring a `Payload Len` greater than this limit
-  MUST treat the stream as corrupted, SHOULD send a `Goodbye` message with
-  `ClosureCode.protocolError`, and MUST close the transport connection.
+When a receiver encounters a frame declaring a `Payload Len` greater than this limit,
+it MUST perform the following sequence:
+
+1. If the receiver is the server, send a `ServerNotice` with
+   `severity = FATAL` and `code = ServerNoticeCode.frameTooLarge`.
+   (Clients have no symmetric notice mechanism and SHOULD skip this step.)
+2. Send a `Goodbye` with `code = ClosureCode.protocolError`.
+3. Close the transport connection.
+
 - Applications that need to exchange larger payloads MUST split the data across multiple
   messages or use a dedicated transfer mechanism (e.g., the Transfer channel).
 - This limit is intentionally conservative. Future protocol versions MAY raise it,
   but SHOULD NOT lower it, to preserve forward compatibility with existing clients.
+- The same `ServerNotice` → `Goodbye` → close sequence applies to other fatal conditions
+  such as authentication failure (`authenticationFailed` → `Goodbye.protocolError`) and
+  session allocation failure (`sessionAllocationFailed` → `Goodbye.internalServerError`).
+  See `ServerNoticeCode` in `general.mdproto.md` for the full list of codes.
 
 ## PROTOCOL UPGRADE
 
@@ -342,8 +352,20 @@ mainChannel.send(ServerNotice(
     timestamp: UInt64(Date().timeIntervalSince1970 * 1000)
 ))
 
+mainChannel.send(Goodbye(
+    code: .protocolError,
+    message: "Unsupported protocol version"
+))
+
 mainChannel.close()
 transport.close()
+
+// The same pattern applies when the server cannot accept the session due to
+// resource constraints:
+//
+//     ServerNotice(.fatal, .sessionAllocationFailed, ...)
+//     Goodbye(.internalServerError, ...)
+//     close
 ```
 
 The `supportedFeatures` field contains identifiers for the features provided by the server.
@@ -418,6 +440,11 @@ guard pam.authenticate(payload.username, payload.password) else {
             code: .authenticationFailed,
             message: "Authentication failed",
             timestamp: UInt64(Date().timeIntervalSince1970 * 1000)
+        ))
+
+        mainChannel.send(Goodbye(
+            code: .protocolError,
+            message: "Authentication failed"
         ))
 
         mainChannel.close()
