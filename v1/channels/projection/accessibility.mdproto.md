@@ -298,7 +298,7 @@ message AccessibilityNode {
 
 ```protobuf
 /// Requests the accessibility tree.
-// @opcode: 0x80E1
+// @opcode: 0x8101
 message GetAccessibilityTreeRequest {
   uint64 requestId = 1;
 
@@ -325,7 +325,7 @@ message GetAccessibilityTreeRequest {
 
 ```protobuf
 /// Response to an accessibility tree request.
-// @opcode: 0x80E2
+// @opcode: 0x8102
 message GetAccessibilityTreeResponse {
   uint64 requestId = 1;
 
@@ -350,7 +350,7 @@ message GetAccessibilityTreeResponse {
 
 ```protobuf
 /// Requests subscription to accessibility tree update events.
-// @opcode: 0x80E3
+// @opcode: 0x8103
 message SubscribeAccessibilityTreeUpdatesRequest {
   uint64 requestId = 1;
 
@@ -388,7 +388,7 @@ message SubscribeAccessibilityTreeUpdatesRequest {
 
 ```protobuf
 /// Response to a SubscribeAccessibilityTreeUpdatesRequest.
-// @opcode: 0x80E4
+// @opcode: 0x8104
 message SubscribeAccessibilityTreeUpdatesResponse {
   uint64 requestId = 1;
 
@@ -412,7 +412,7 @@ message SubscribeAccessibilityTreeUpdatesResponse {
 
 ```protobuf
 /// Unsubscribes from accessibility tree update events.
-// @opcode: 0x80E5
+// @opcode: 0x8105
 message UnsubscribeAccessibilityTreeUpdatesRequest {
   uint64 requestId = 1;
 
@@ -429,7 +429,7 @@ message UnsubscribeAccessibilityTreeUpdatesRequest {
 
 ```protobuf
 /// Response to an UnsubscribeAccessibilityTreeUpdatesRequest.
-// @opcode: 0x80E6
+// @opcode: 0x8106
 message UnsubscribeAccessibilityTreeUpdatesResponse {
   uint64 requestId = 1;
 
@@ -449,7 +449,7 @@ message UnsubscribeAccessibilityTreeUpdatesResponse {
 
 ```protobuf
 /// Accessibility tree change event.
-// @opcode: 0x80E7
+// @opcode: 0x8107
 message AccessibilityTreeUpdateEvent {
   /// Subscription identifier.
   SRUUID subscriptionId = 1;
@@ -481,7 +481,7 @@ message AccessibilityTreeUpdateEvent {
 
 ```protobuf
 /// Requests an action to be performed on an accessibility node.
-// @opcode: 0x80E8
+// @opcode: 0x8108
 message DispatchActionRequest {
   uint64 requestId = 1;
 
@@ -509,7 +509,7 @@ message DispatchActionRequest {
 
 ```protobuf
 /// Response to a DispatchActionRequest.
-// @opcode: 0x80E9
+// @opcode: 0x8109
 message DispatchActionResponse {
   uint64 requestId = 1;
 

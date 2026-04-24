@@ -170,6 +170,41 @@ The Projection channel encompasses Display, Window, Cursor, and Audio related fu
 │ 0x80C5  │ AudioSessionChangedEvent                              │
 │ 0x80C6  │ AudioSessionEndedEvent                                │
 └─────────┴───────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────────┐
+│ Group 8 (0x80E1~0x80FF): Application Management (appman)         │
+├─────────┬───────────────────────────────────────────────────────┤
+│ 0x80E1  │ ApplicationListRequest                                │
+│ 0x80E2  │ ApplicationListResponse                               │
+│ 0x80E3  │ ApplicationLaunchRequest                              │
+│ 0x80E4  │ ApplicationLaunchResponse                             │
+│ 0x80E5  │ ApplicationTerminateRequest                           │
+│ 0x80E6  │ ApplicationTerminateResponse                          │
+│ 0x80E7  │ SubscribeApplicationEventsRequest                     │
+│ 0x80E8  │ SubscribeApplicationEventsResponse                    │
+│ 0x80E9  │ UnsubscribeApplicationEventsRequest                   │
+│ 0x80EA  │ UnsubscribeApplicationEventsResponse                  │
+│ 0x80EB  │ ApplicationChangedEvent                               │
+│ 0x80F1  │ StartAppStreamRequest                                 │
+│ 0x80F2  │ StartAppStreamResponse                                │
+│ 0x80F3  │ StopAppStreamRequest                                  │
+│ 0x80F4  │ StopAppStreamResponse                                 │
+│ 0x80F5  │ AppStreamWindowEvent                                  │
+└─────────┴───────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────────┐
+│ Group 9 (0x8101~0x811F): Accessibility                           │
+├─────────┬───────────────────────────────────────────────────────┤
+│ 0x8101  │ GetAccessibilityTreeRequest                           │
+│ 0x8102  │ GetAccessibilityTreeResponse                          │
+│ 0x8103  │ SubscribeAccessibilityTreeUpdatesRequest              │
+│ 0x8104  │ SubscribeAccessibilityTreeUpdatesResponse             │
+│ 0x8105  │ UnsubscribeAccessibilityTreeUpdatesRequest            │
+│ 0x8106  │ UnsubscribeAccessibilityTreeUpdatesResponse           │
+│ 0x8107  │ AccessibilityTreeUpdateEvent                          │
+│ 0x8108  │ DispatchActionRequest                                 │
+│ 0x8109  │ DispatchActionResponse                                │
+└─────────┴───────────────────────────────────────────────────────┘
 ```
 
 ### 3.3 Projection Data Channel
