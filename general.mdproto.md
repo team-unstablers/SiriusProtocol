@@ -20,6 +20,9 @@ The message framing structure is as follows:
 For example, a message with opcode `0x0001` and a payload length of 10 bytes is encoded as
 `00 01 | 00 00 00 0A | [10 bytes payload]`.
 
+The payload length MUST NOT exceed 16 MiB (16,777,216 bytes).
+See the "FRAME SIZE LIMIT" section of the protocol introduction for the full specification.
+
 ---
 
 # CONSTANTS

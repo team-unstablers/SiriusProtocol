@@ -218,6 +218,18 @@ All Sirius messages use the following fixed framing structure:
 - **Payload (variable)**
   A variable-length field containing the actual message data serialized with Protobuf v3.
 
+### FRAME SIZE LIMIT
+
+The `Payload Len` field MUST NOT exceed **16 MiB** (16 × 1024 × 1024 = 16,777,216 bytes).
+
+- A receiver that encounters a frame declaring a `Payload Len` greater than this limit
+  MUST treat the stream as corrupted, SHOULD send a `Goodbye` message with
+  `ClosureCode.protocolError`, and MUST close the transport connection.
+- Applications that need to exchange larger payloads MUST split the data across multiple
+  messages or use a dedicated transfer mechanism (e.g., the Transfer channel).
+- This limit is intentionally conservative. Future protocol versions MAY raise it,
+  but SHOULD NOT lower it, to preserve forward compatibility with existing clients.
+
 ## PROTOCOL UPGRADE
 
 - Each feature/channel MAY upgrade the stream itself to a different protocol as needed.
