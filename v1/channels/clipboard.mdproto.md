@@ -72,6 +72,11 @@ message ClipboardItem {
 - Single item copy (text, image, etc.): 1 `ClipboardItem` with multiple `ClipboardData` representations inside
 - Multi-item copy (multiple files, etc.): 1 `ClipboardItem` per file
 
+### IMPLEMENTATION NOTES
+
+- The length of `representations` MUST NOT exceed 32.
+- The receiver MAY reject any message that violates this limit.
+
 ---
 
 # MESSAGES
@@ -165,6 +170,8 @@ message ClipboardEvent {
 ### IMPLEMENTATION NOTES
 
 - Implementations MAY refuse to send clipboard events for data that is deemed security-sensitive.
+- The length of `items` MUST NOT exceed 1024.
+- The receiver MAY reject any message that violates this limit.
 
 ### DESCRIPTION
 
