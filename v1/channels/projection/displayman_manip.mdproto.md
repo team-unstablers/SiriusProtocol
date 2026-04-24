@@ -29,6 +29,9 @@ message DisplayLayoutChange {
   /// Desired rotation.
   // @constset: DisplayRotation
   optional uint32 rotation = 3;
+
+  /// Desired display origin (top-left corner in the global coordinate space).
+  optional SRPoint origin = 4;
 }
 ```
 
