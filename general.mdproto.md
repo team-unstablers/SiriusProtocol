@@ -79,6 +79,13 @@ constset ServerNoticeCode: uint32 {
 
   // CLIENT FAULT (0x4000 ~ 0x4FFF)
 
+  /// A general protocol violation that does not match a more specific code in this set.
+  /// Implementations SHOULD prefer a more specific code when one applies (for example,
+  /// `frameTooLarge` for frame size violations, `unsupportedOpcode` for unknown opcodes).
+  /// Typical uses include exceeding count or size limits beyond the configured hard
+  /// threshold and other invariant violations that warrant a fatal close.
+  const protocolViolation       = 0x4000;
+
   /// The server received a message of a type it does not support or recognize.
   /// This is typically used when a server that does not support a newer version of the
   /// Sirius protocol receives a message introduced in that newer version.
