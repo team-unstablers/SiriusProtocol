@@ -35,6 +35,12 @@ constset SiriusFeatureID: UUID {
 
   /// Transfer: Transfers large data such as files and clipboard data.
   const transfer = uuid"9F4EE026-35B4-4B3D-AD0B-168EE4CDB175";
+
+  /// FileSystemAccess: Control plane for the file-system access channel (discovery and consent).
+  const fileSystemAccess = uuid"3F64ED71-E64C-4D5F-ACF3-77EA8731EDE3";
+
+  /// FileSystemAccessMount: Per-mount data plane for the file-system access channel (handle, I/O, directory and file operations).
+  const fileSystemAccessMount = uuid"31035A4B-AB82-4F7D-A165-F763C382C1B9";
 }
 ```
 
