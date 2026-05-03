@@ -228,9 +228,9 @@ The Projection channel encompasses Display, Window, Cursor, and Audio related fu
 └─────────┴───────────────────────────────────────────────────────┘
 ```
 
-### 3.5 File-System Access Channel
+### 3.5 File-System Access Control Channel (fsaccess)
 
-The File-System Access (fsaccess) channel exposes file systems on the remote peer in a manner inspired by RDP's `\\tsclient\C` drive redirection. The channel surface is split across seven functional groups: discovery and consent (Group 1), handle lifecycle (Group 2), bounded inline I/O (Group 3), metadata queries (Group 4), directory operations (Group 5), file operations (Group 6), and an opt-in handoff to the Transfer channel for sequential bulk transfer (Group 7).
+The File-System Access (fsaccess) control channel is the discovery-and-consent plane of the file-system access feature. It exposes file systems on the remote peer in a manner inspired by RDP's `\\tsclient\C` drive redirection, and is split across a single functional group covering listing, mount, and unmount. Per-mount data-plane operations live on the companion `fsaccess_mount` channel (see Section 3.6).
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
@@ -243,65 +243,71 @@ The File-System Access (fsaccess) channel exposes file systems on the remote pee
 │ 0x8005  │ FileSystemUnmountRequest                              │
 │ 0x8006  │ FileSystemUnmountResponse                             │
 └─────────┴───────────────────────────────────────────────────────┘
+```
 
+### 3.6 File-System Access Mount Channel (fsaccess_mount)
+
+The fsaccess_mount channel carries the per-mount data plane of the file-system access feature. The exposing peer opens one fsaccess_mount channel per granted mount session (mirroring the relationship between `projection` and `projection_data`). The channel surface is split across six functional groups: handle lifecycle (Group 1), bounded inline I/O (Group 2), metadata queries (Group 3), directory operations (Group 4), file operations (Group 5), and an opt-in handoff to the Transfer channel for sequential bulk transfer (Group 6).
+
+```
 ┌─────────────────────────────────────────────────────────────────┐
-│ Group 2 (0x8021~0x803F): Handle Lifecycle                        │
+│ Group 1 (0x8001~0x801F): Handle Lifecycle                        │
 ├─────────┬───────────────────────────────────────────────────────┤
-│ 0x8021  │ FileSystemOpenRequest                                 │
-│ 0x8022  │ FileSystemOpenResponse                                │
-│ 0x8023  │ FileSystemCloseRequest                                │
-│ 0x8024  │ FileSystemCloseResponse                               │
+│ 0x8001  │ FileSystemOpenRequest                                 │
+│ 0x8002  │ FileSystemOpenResponse                                │
+│ 0x8003  │ FileSystemCloseRequest                                │
+│ 0x8004  │ FileSystemCloseResponse                               │
 └─────────┴───────────────────────────────────────────────────────┘
 
 ┌─────────────────────────────────────────────────────────────────┐
-│ Group 3 (0x8041~0x805F): Inline I/O                              │
+│ Group 2 (0x8021~0x803F): Inline I/O                              │
 ├─────────┬───────────────────────────────────────────────────────┤
-│ 0x8041  │ FileSystemReadRequest                                 │
-│ 0x8042  │ FileSystemReadResponse                                │
-│ 0x8043  │ FileSystemWriteRequest                                │
-│ 0x8044  │ FileSystemWriteResponse                               │
-│ 0x8045  │ FileSystemFlushRequest                                │
-│ 0x8046  │ FileSystemFlushResponse                               │
+│ 0x8021  │ FileSystemReadRequest                                 │
+│ 0x8022  │ FileSystemReadResponse                                │
+│ 0x8023  │ FileSystemWriteRequest                                │
+│ 0x8024  │ FileSystemWriteResponse                               │
+│ 0x8025  │ FileSystemFlushRequest                                │
+│ 0x8026  │ FileSystemFlushResponse                               │
 └─────────┴───────────────────────────────────────────────────────┘
 
 ┌─────────────────────────────────────────────────────────────────┐
-│ Group 4 (0x8061~0x807F): Stat                                    │
+│ Group 3 (0x8041~0x805F): Stat                                    │
 ├─────────┬───────────────────────────────────────────────────────┤
-│ 0x8061  │ FileSystemStatRequest                                 │
-│ 0x8062  │ FileSystemStatResponse                                │
-│ 0x8063  │ FileSystemFStatRequest                                │
-│ 0x8064  │ FileSystemFStatResponse                               │
+│ 0x8041  │ FileSystemStatRequest                                 │
+│ 0x8042  │ FileSystemStatResponse                                │
+│ 0x8043  │ FileSystemFStatRequest                                │
+│ 0x8044  │ FileSystemFStatResponse                               │
 └─────────┴───────────────────────────────────────────────────────┘
 
 ┌─────────────────────────────────────────────────────────────────┐
-│ Group 5 (0x8081~0x809F): Directory Operations                    │
+│ Group 4 (0x8061~0x807F): Directory Operations                    │
 ├─────────┬───────────────────────────────────────────────────────┤
-│ 0x8081  │ FileSystemReadDirRequest                              │
-│ 0x8082  │ FileSystemReadDirResponse                             │
-│ 0x8083  │ FileSystemMkdirRequest                                │
-│ 0x8084  │ FileSystemMkdirResponse                               │
-│ 0x8085  │ FileSystemRmdirRequest                                │
-│ 0x8086  │ FileSystemRmdirResponse                               │
+│ 0x8061  │ FileSystemReadDirRequest                              │
+│ 0x8062  │ FileSystemReadDirResponse                             │
+│ 0x8063  │ FileSystemMkdirRequest                                │
+│ 0x8064  │ FileSystemMkdirResponse                               │
+│ 0x8065  │ FileSystemRmdirRequest                                │
+│ 0x8066  │ FileSystemRmdirResponse                               │
 └─────────┴───────────────────────────────────────────────────────┘
 
 ┌─────────────────────────────────────────────────────────────────┐
-│ Group 6 (0x80A1~0x80BF): File Operations                         │
+│ Group 5 (0x8081~0x809F): File Operations                         │
 ├─────────┬───────────────────────────────────────────────────────┤
-│ 0x80A1  │ FileSystemUnlinkRequest                               │
-│ 0x80A2  │ FileSystemUnlinkResponse                              │
-│ 0x80A3  │ FileSystemRenameRequest                               │
-│ 0x80A4  │ FileSystemRenameResponse                              │
-│ 0x80A5  │ FileSystemFTruncateRequest                            │
-│ 0x80A6  │ FileSystemFTruncateResponse                           │
+│ 0x8081  │ FileSystemUnlinkRequest                               │
+│ 0x8082  │ FileSystemUnlinkResponse                              │
+│ 0x8083  │ FileSystemRenameRequest                               │
+│ 0x8084  │ FileSystemRenameResponse                              │
+│ 0x8085  │ FileSystemFTruncateRequest                            │
+│ 0x8086  │ FileSystemFTruncateResponse                           │
 └─────────┴───────────────────────────────────────────────────────┘
 
 ┌─────────────────────────────────────────────────────────────────┐
-│ Group 7 (0x80C1~0x80DF): Stream Handoff                          │
+│ Group 6 (0x80A1~0x80BF): Stream Handoff                          │
 ├─────────┬───────────────────────────────────────────────────────┤
-│ 0x80C1  │ FileSystemRequestStreamReadRequest                    │
-│ 0x80C2  │ FileSystemRequestStreamReadResponse                   │
-│ 0x80C3  │ FileSystemRequestStreamWriteRequest                   │
-│ 0x80C4  │ FileSystemRequestStreamWriteResponse                  │
+│ 0x80A1  │ FileSystemRequestStreamReadRequest                    │
+│ 0x80A2  │ FileSystemRequestStreamReadResponse                   │
+│ 0x80A3  │ FileSystemRequestStreamWriteRequest                   │
+│ 0x80A4  │ FileSystemRequestStreamWriteResponse                  │
 └─────────┴───────────────────────────────────────────────────────┘
 ```
 
