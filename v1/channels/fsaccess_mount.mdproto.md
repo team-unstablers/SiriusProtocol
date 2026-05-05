@@ -82,6 +82,21 @@ optionset FileAttributes: uint32 {
 }
 ```
 
+## LockType
+
+```constset
+constset LockType: uint32 {
+  /// Shared (read) lock. Multiple shared locks MAY coexist on overlapping ranges across different handles, but no exclusive lock MAY coexist with a shared lock on overlapping ranges. (POSIX: F_RDLCK)
+  const shared = 0;
+  /// Exclusive (write) lock. Only one exclusive lock MAY exist on a given range, and it MUST NOT coexist with any other lock (shared or exclusive) on overlapping ranges. (POSIX: F_WRLCK)
+  const exclusive = 1;
+}
+```
+
+### DESCRIPTION
+
+Used by `FileSystemLockRequest`, `FileSystemTestLockRequest`, and `FileSystemTestLockResponse` to identify the kind of byte-range lock. Acquiring a `shared` lock requires the underlying handle to have been opened with read access; acquiring an `exclusive` lock requires write access. See the `LOCK SEMANTICS` appendix for the full ownership and lifetime model.
+
 ---
 
 # STRUCTS
@@ -893,6 +908,166 @@ message FileSystemRequestStreamWriteResponse {
 
 Sent by the exposing peer to acknowledge the stream request. A successful response is a promise that the exposing peer is ready to consume bytes on the Transfer channel addressed at `/noctiluca/fsaccess_mount/{transferId}`. Mid-stream failures propagate through the Transfer channel's own abort mechanism rather than through a follow-up fsaccess_mount message.
 
+## FileSystemLockRequest
+
+```protobuf
+/// Acquires a byte-range advisory lock on an open file handle. The operation is strictly non-blocking: if any conflicting lock currently exists on overlapping bytes, the request MUST fail immediately with `wouldBlock`.
+// @opcode: 0x80C1
+message FileSystemLockRequest {
+  uint64 requestId = 1;
+  uint64 handleId = 2;
+
+  /// Type of lock to acquire.
+  // @constset: LockType
+  uint32 type = 3;
+
+  /// Absolute offset within the file at which the locked range begins.
+  uint64 offset = 4;
+
+  /// Length of the locked range in bytes. The sentinel value `0xFFFFFFFFFFFFFFFF` means "from `offset` to the maximum possible end of file" (whole-file lock when `offset = 0`). A value of zero is invalid and MUST fail with `invalidArgument`.
+  uint64 length = 5;
+}
+```
+
+### DESCRIPTION
+
+Acquires an advisory byte-range lock on the file referenced by `handleId`. The operation is strictly non-blocking: callers requiring blocking semantics MUST poll by reissuing the request after a `wouldBlock` failure.
+
+The lock is bound to the supplied `handleId` and is automatically released when the handle is closed (`FileSystemCloseRequest`) or when the surrounding `fsaccess_mount` channel closes for any reason. See the `LOCK SEMANTICS` appendix for the full ownership and lifetime model.
+
+### IMPLEMENTATION NOTES
+
+Acquiring a `shared` lock requires the handle to have been opened with `read` or `readWrite` access; acquiring an `exclusive` lock requires `write` or `readWrite` access. A mismatch MUST be reported as `permissionDenied`.
+
+A `Lock` request whose `(handleId, type, offset, length)` exactly matches a currently held lock MUST fail with `invalidArgument`. The protocol does not provide an atomic shared-to-exclusive upgrade; callers needing to change a lock's type MUST explicitly `Unlock` and re-acquire, accepting the brief race window during which another caller may interleave.
+
+The exposing peer MUST attempt to acquire the lock at the host OS level using the platform-native non-blocking call (POSIX `fcntl(F_SETLK)`, Windows `LockFileEx` with `LOCKFILE_FAIL_IMMEDIATELY`, etc.). When the host platform does not provide handle-bound byte-range locks with the semantics expected by the protocol, the exposing peer MUST signal this by setting `FileSystemMountResponse.supportsLocks = false` rather than silently substituting a weaker semantics; in that case, this request MUST fail with `notSupported`.
+
+## FileSystemLockResponse
+
+```protobuf
+/// Response to a FileSystemLockRequest.
+// @opcode: 0x80C2
+message FileSystemLockResponse {
+  uint64 requestId = 1;
+  bool success = 2;
+
+  /// Populated when `success` is false. Common codes include `wouldBlock` (a conflicting lock exists), `notSupported` (the mount session reports `supportsLocks = false`), `invalidHandle`, `invalidArgument` (re-lock on an identical range, `length = 0`, etc.), and `permissionDenied` (the requested lock type exceeds the handle's `accessMode`).
+  optional sirius.msgdef.v1.channels.fsaccess.ErrorInfo error = 3;
+}
+```
+
+### DESCRIPTION
+
+Returned in response to a `FileSystemLockRequest`. A `wouldBlock` failure is the canonical "lock contended" signal and is a normal, expected outcome rather than a protocol-level error.
+
+## FileSystemUnlockRequest
+
+```protobuf
+/// Releases byte-range locks held on an open file handle.
+// @opcode: 0x80C3
+message FileSystemUnlockRequest {
+  uint64 requestId = 1;
+  uint64 handleId = 2;
+
+  /// Absolute offset within the file at which the unlock range begins.
+  uint64 offset = 3;
+
+  /// Length of the unlock range in bytes. The sentinel value `0xFFFFFFFFFFFFFFFF` means "from `offset` to the maximum possible end of file". A value of zero is invalid and MUST fail with `invalidArgument`.
+  uint64 length = 4;
+}
+```
+
+### DESCRIPTION
+
+Releases the portion of any byte-range locks held on `handleId` that overlaps `[offset, offset + length)`. Mirrors POSIX `fcntl` with `F_UNLCK`: the released range MAY be a strict subset of an existing lock (in which case the lock is split into the surrounding non-overlapping portions), a strict superset (in which case the entire lock is released), or have no overlap with any existing lock (in which case the operation is a no-op).
+
+An `Unlock` covering bytes that the handle does not currently hold a lock on MUST succeed silently and MUST NOT be reported as an error. This matches POSIX semantics and avoids forcing callers to track exact lock ranges for cleanup.
+
+### IMPLEMENTATION NOTES
+
+The exposing peer MUST translate the released range to the platform-native call (POSIX `fcntl(F_SETLK)` with `F_UNLCK`, Windows `UnlockFileEx`). Platforms whose native unlock call rejects "not held" ranges (notably Windows `UnlockFileEx`, which returns `ERROR_NOT_LOCKED`) MUST suppress that error and report `success = true`, so that protocol semantics remain platform-independent.
+
+## FileSystemUnlockResponse
+
+```protobuf
+/// Response to a FileSystemUnlockRequest.
+// @opcode: 0x80C4
+message FileSystemUnlockResponse {
+  uint64 requestId = 1;
+  bool success = 2;
+
+  /// Populated when `success` is false. Common codes include `notSupported` (the mount session reports `supportsLocks = false`), `invalidHandle`, and `invalidArgument` (`length = 0`).
+  optional sirius.msgdef.v1.channels.fsaccess.ErrorInfo error = 3;
+}
+```
+
+### DESCRIPTION
+
+Returned in response to a `FileSystemUnlockRequest`.
+
+## FileSystemTestLockRequest
+
+```protobuf
+/// Probes whether a byte-range lock could be acquired without actually acquiring it. Equivalent in intent to POSIX `fcntl(F_GETLK)`.
+// @opcode: 0x80C5
+message FileSystemTestLockRequest {
+  uint64 requestId = 1;
+  uint64 handleId = 2;
+
+  /// Type of lock that would be attempted.
+  // @constset: LockType
+  uint32 type = 3;
+
+  /// Absolute offset within the file at which the candidate range begins.
+  uint64 offset = 4;
+
+  /// Length of the candidate range in bytes. The sentinel value `0xFFFFFFFFFFFFFFFF` means "from `offset` to the maximum possible end of file". A value of zero is invalid and MUST fail with `invalidArgument`.
+  uint64 length = 5;
+}
+```
+
+### DESCRIPTION
+
+Probes whether a `FileSystemLockRequest` with the same `(type, offset, length)` would succeed at the moment of the test, without actually taking the lock.
+
+The result is advisory: even when `canAcquire` is true, a subsequent `FileSystemLockRequest` MAY still fail with `wouldBlock` if another caller acquires a conflicting lock in the interval between the test and the acquire. This message is intended for UI prompts and diagnostics, not as a substitute for handling `wouldBlock` on the actual `Lock`.
+
+## FileSystemTestLockResponse
+
+```protobuf
+/// Response to a FileSystemTestLockRequest.
+// @opcode: 0x80C6
+message FileSystemTestLockResponse {
+  uint64 requestId = 1;
+  bool success = 2;
+
+  /// True when a `FileSystemLockRequest` with the same `type`, `offset`, and `length` would be expected to succeed at the moment of the test. Valid only when `success` is true.
+  bool canAcquire = 3;
+
+  /// Type of an existing lock that would conflict with the requested acquisition. Populated only when `success` is true and `canAcquire` is false.
+  // @constset: LockType
+  uint32 conflictingType = 4;
+
+  /// Absolute offset of an existing conflicting lock. Populated only when `success` is true and `canAcquire` is false. The reported range MAY be wider than the requested range when a single existing lock spans more bytes than were probed.
+  uint64 conflictingOffset = 5;
+
+  /// Length of an existing conflicting lock. Populated only when `success` is true and `canAcquire` is false. Uses the same sentinel encoding as `FileSystemLockRequest.length`.
+  uint64 conflictingLength = 6;
+
+  /// Populated when `success` is false. Common codes include `notSupported` (the mount session reports `supportsLocks = false`), `invalidHandle`, and `invalidArgument` (`length = 0`).
+  optional sirius.msgdef.v1.channels.fsaccess.ErrorInfo error = 7;
+}
+```
+
+### DESCRIPTION
+
+Returned in response to a `FileSystemTestLockRequest`.
+
+When a conflicting lock exists, only its `type`, `offset`, and `length` are reported. The identity of the conflicting lock owner (handle, channel, or process) is intentionally NOT exposed, both to keep the wire surface narrow and to avoid leaking information across mount sessions or across processes on the host.
+
+When multiple existing locks conflict with the requested range, the exposing peer MAY report any one of them; it is not required to coalesce conflicting locks or pick a deterministic representative. Consumers MUST NOT rely on a particular choice.
+
 ---
 
 # CHANNEL ARGUMENTS
@@ -965,6 +1140,55 @@ Hard links to entries inside the mount root are followed transparently because a
 
 ---
 
+# LOCK SEMANTICS
+
+This appendix defines the ownership, lifetime, and platform-binding rules that govern the byte-range lock operations (`FileSystemLockRequest`, `FileSystemUnlockRequest`, `FileSystemTestLockRequest`).
+
+## Capability Negotiation
+
+Lock operations are gated by the `supportsLocks` field on `FileSystemMountResponse` (see `fsaccess.mdproto.md`). When the exposing peer reports `supportsLocks = false`, all three lock operations on the corresponding `fsaccess_mount` channel MUST fail with `notSupported`, and the consuming peer SHOULD avoid sending them.
+
+The intended use of `supportsLocks = false` is to signal exposing peers running on platforms or sandboxes where byte-range file locks are unavailable or unreliable (for example, certain mobile sandboxes that expose filesystem access through proxies that bypass the host kernel's lock tables). In such cases, the consuming peer MAY simulate locks in its own address space if its application semantics require some form of mutual exclusion across its own callers; such simulation provides no cross-peer guarantee and is entirely out of scope for this protocol.
+
+## Range Encoding
+
+A lock covers the half-open byte range `[offset, offset + length)`. The sentinel `length = 0xFFFFFFFFFFFFFFFF` denotes "from `offset` to the maximum possible end of file", which becomes a whole-file lock when combined with `offset = 0`. The exposing peer MUST translate the sentinel into the platform-equivalent representation (POSIX `l_len = 0`, Windows `(MAXDWORD, MAXDWORD)`) when issuing the host syscall.
+
+A `length` of zero is invalid for all three lock operations and MUST fail with `invalidArgument`. This rule deliberately diverges from POSIX `fcntl`, which interprets `l_len = 0` as "until end of file"; the protocol uses the explicit sentinel instead so that there is exactly one wire encoding for a whole-file or open-ended lock.
+
+## Ownership and Lifetime
+
+Locks are bound to the `handleId` that acquired them. The exposing peer MUST release a handle's locks under any of the following conditions:
+
+- The handle is explicitly closed via `FileSystemCloseRequest`.
+- The handle is implicitly closed because the surrounding `fsaccess_mount` channel closes (graceful close, transport failure, parent fsaccess control-channel cascade, or implicit unmount by the requester).
+- The mount session is released via `FileSystemUnmountRequest` on the parent fsaccess control channel.
+
+There is no separate lock-leasing or heartbeat mechanism: lock lifetime is exactly the lifetime of the handle that holds it. Because handle lifetime is itself bounded by channel and transport lifetime, transport failure transitively releases all locks held by a peer, eliminating cross-session lock leakage without requiring an additional liveness protocol.
+
+## Re-Lock and Upgrade
+
+A `FileSystemLockRequest` whose `(handleId, type, offset, length)` exactly matches a currently held lock MUST fail with `invalidArgument`. The protocol does not provide an atomic shared-to-exclusive (or exclusive-to-shared) upgrade; callers needing to change a lock's type MUST explicitly `Unlock` the existing range and re-acquire it, accepting the brief race window during which another caller may interleave.
+
+A `Lock` request whose range overlaps but does not exactly match a currently held lock on the same handle MAY be accepted by the exposing peer when the host OS would accept the corresponding native call (for example, POSIX `fcntl` allows extending or splitting a lock with subsequent calls). The protocol leaves the exact treatment of such cases to the host syscall semantics.
+
+## Range Overlap on Unlock
+
+`Unlock` follows POSIX `fcntl(F_UNLCK)` semantics: the released range MAY be a strict subset of an existing lock (in which case the lock is split into the surrounding non-overlapping portions), a strict superset (in which case the entire lock is released), or have no overlap with any existing lock (in which case the operation is a no-op and MUST succeed).
+
+Platforms whose native unlock call rejects "not held" ranges (notably Windows `UnlockFileEx`, which returns `ERROR_NOT_LOCKED`) MUST suppress that error and report `success = true`, so that protocol semantics remain platform-independent.
+
+## Mandatory vs Advisory
+
+The protocol does not distinguish between advisory and mandatory locks. The exposing peer MUST acquire whatever the host OS provides:
+
+- POSIX (Linux, macOS): advisory locks via `fcntl(F_SETLK)`, or OFD locks where preferred for handle-bound semantics.
+- Windows: mandatory locks via `LockFileEx` with `LOCKFILE_FAIL_IMMEDIATELY`.
+
+Consequently, the visible effect of a held lock on operations from outside the fsaccess channel (for example, an unrelated process on the host) varies by platform. Within a single mount session, however, a held exclusive lock MUST cause overlapping operations from other handles in the same session to behave consistently with the host OS semantics for that lock type.
+
+---
+
 # SPEC VIOLATION HANDLING
 
 This appendix collects the per-channel size and count limits referenced from individual messages above, and maps each potential violation onto the project-wide **Spec Violation Handling Policy** (see the project's `CLAUDE.md`). Limits that apply to the discovery / consent surface of fsaccess are defined in the control channel's own `SPEC VIOLATION HANDLING` section.
@@ -992,7 +1216,7 @@ The categorization below distinguishes violations that result in a per-operation
 
 ### Response-level errors (channel remains open)
 
-These are normal operational failures that map to the `ErrorInfo` in the relevant response: `notFound`, `accessDenied`, `permissionDenied`, `readOnlyFilesystem`, `policyViolation`, `notEmpty`, `isDirectory`, `notDirectory`, `loop`, `crossDevice`, `alreadyExists`, `pathTooLong`, `diskFull`, `fileTooLarge`, `quotaExceeded` (when arising from per-operation quota rather than a Pattern A hard violation), `tooManyHandles`, `busy`, `staleHandle`, `ioError`, `invalidHandle`, `invalidArgument`, `invalidPath`, `notSupported`.
+These are normal operational failures that map to the `ErrorInfo` in the relevant response: `notFound`, `accessDenied`, `permissionDenied`, `readOnlyFilesystem`, `policyViolation`, `notEmpty`, `isDirectory`, `notDirectory`, `loop`, `crossDevice`, `alreadyExists`, `pathTooLong`, `diskFull`, `fileTooLarge`, `quotaExceeded` (when arising from per-operation quota rather than a Pattern A hard violation), `tooManyHandles`, `busy`, `staleHandle`, `wouldBlock`, `ioError`, `invalidHandle`, `invalidArgument`, `invalidPath`, `notSupported`.
 
 ### Channel-fatal violations (channel closes with `ServerNotice`)
 

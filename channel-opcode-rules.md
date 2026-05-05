@@ -247,7 +247,7 @@ The File-System Access (fsaccess) control channel is the discovery-and-consent p
 
 ### 3.6 File-System Access Mount Channel (fsaccess_mount)
 
-The fsaccess_mount channel carries the per-mount data plane of the file-system access feature. The exposing peer opens one fsaccess_mount channel per granted mount session (mirroring the relationship between `projection` and `projection_data`). The channel surface is split across six functional groups: handle lifecycle (Group 1), bounded inline I/O (Group 2), metadata queries (Group 3), directory operations (Group 4), file operations (Group 5), and an opt-in handoff to the Transfer channel for sequential bulk transfer (Group 6).
+The fsaccess_mount channel carries the per-mount data plane of the file-system access feature. The exposing peer opens one fsaccess_mount channel per granted mount session (mirroring the relationship between `projection` and `projection_data`). The channel surface is split across seven functional groups: handle lifecycle (Group 1), bounded inline I/O (Group 2), metadata queries (Group 3), directory operations (Group 4), file operations (Group 5), an opt-in handoff to the Transfer channel for sequential bulk transfer (Group 6), and byte-range advisory locks (Group 7).
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
@@ -308,6 +308,17 @@ The fsaccess_mount channel carries the per-mount data plane of the file-system a
 │ 0x80A2  │ FileSystemRequestStreamReadResponse                   │
 │ 0x80A3  │ FileSystemRequestStreamWriteRequest                   │
 │ 0x80A4  │ FileSystemRequestStreamWriteResponse                  │
+└─────────┴───────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────────┐
+│ Group 7 (0x80C1~0x80DF): Byte-Range Locks                        │
+├─────────┬───────────────────────────────────────────────────────┤
+│ 0x80C1  │ FileSystemLockRequest                                 │
+│ 0x80C2  │ FileSystemLockResponse                                │
+│ 0x80C3  │ FileSystemUnlockRequest                               │
+│ 0x80C4  │ FileSystemUnlockResponse                              │
+│ 0x80C5  │ FileSystemTestLockRequest                             │
+│ 0x80C6  │ FileSystemTestLockResponse                            │
 └─────────┴───────────────────────────────────────────────────────┘
 ```
 

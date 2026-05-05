@@ -103,6 +103,8 @@ constset FileSystemErrorCode: uint32 {
   const busy = 80;
   /// Handle refers to an entry that no longer exists or has been replaced. (POSIX: ESTALE)
   const staleHandle = 81;
+  /// A non-blocking operation could not complete because it would have blocked. Used by `FileSystemLockRequest` when a conflicting lock already exists on the requested byte range. (POSIX: EAGAIN / EWOULDBLOCK)
+  const wouldBlock = 82;
 
   // I/O
   /// Low-level I/O error. (POSIX: EIO)
@@ -281,6 +283,9 @@ message FileSystemMountResponse {
 
   /// Populated when `success` is false. Typical codes include `consentDenied`, `notFound`, and `policyViolation`.
   optional ErrorInfo error = 5;
+
+  /// Whether the exposing peer supports byte-range locking on this mount session. When false, all three lock operations on the corresponding `fsaccess_mount` channel (`FileSystemLockRequest`, `FileSystemUnlockRequest`, `FileSystemTestLockRequest`) MUST fail with `notSupported`, and the consuming peer SHOULD avoid sending them. See the `LOCK SEMANTICS` appendix of `fsaccess_mount.mdproto.md` for the full capability-negotiation contract.
+  bool supportsLocks = 6;
 }
 ```
 
@@ -289,11 +294,15 @@ message FileSystemMountResponse {
 Sent by the exposing peer after the consent decision has been made.
 A successful response is paired with a follow-up `ChannelStartRequest` opening a new `fsaccess_mount` channel keyed by `sessionId`. The requester correlates the incoming `fsaccess_mount` channel with this response by matching the `sessionId` carried in the channel arguments. See the `CHANNEL LIFECYCLE` appendix for the full open / close sequence.
 
+The `supportsLocks` flag advertises whether byte-range advisory locking is available on the granted mount session. The flag reflects the exposing peer's host-platform capability rather than a per-request policy decision; consuming peers SHOULD treat it as stable for the lifetime of the mount session.
+
 ### IMPLEMENTATION NOTES
 
 When the user explicitly rejects the consent dialog, the response MUST set `code = consentDenied`. Requesters SHOULD NOT automatically retry on `consentDenied`; instead, the retry decision SHOULD be surfaced to the requester's user.
 
 The exposing peer SHOULD send `FileSystemMountResponse` before issuing the corresponding `ChannelStartRequest` for the `fsaccess_mount` channel, so that the requester has the `sessionId` in hand when validating the incoming channel arguments. If the order is reversed on the wire (e.g., due to channel-management ordering), the requester MAY buffer the unfamiliar `ChannelStartRequest` for a brief window and resolve it once the matching `FileSystemMountResponse` arrives.
+
+The exposing peer SHOULD set `supportsLocks = true` only when the host platform provides handle-bound byte-range locks with the semantics expected by the protocol (POSIX `fcntl(F_SETLK)` / OFD locks, Windows `LockFileEx`). Sandboxed or proxied filesystems whose lock tables are unreliable (for example, certain mobile sandboxes) MUST set the flag to false rather than silently substituting a weaker semantics. The consuming peer MAY simulate locks locally if its application semantics require it; such simulation provides no cross-peer guarantee and is entirely out of scope for this protocol.
 
 ## FileSystemUnmountRequest
 
