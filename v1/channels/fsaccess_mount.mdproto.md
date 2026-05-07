@@ -1189,6 +1189,49 @@ Consequently, the visible effect of a held lock on operations from outside the f
 
 ---
 
+# COMPRESSION
+
+This appendix defines how the compression method negotiated on the parent fsaccess control channel applies to byte payloads carried on this mount channel. The choice itself is made on the parent control channel; this appendix specifies what that choice means on the data plane.
+
+## Capability Negotiation
+
+The compression method is selected during mount setup, by the exposing peer's pick from `FileSystemMountRequest.proposedCompressionMethods` reported in `FileSystemMountResponse.selectedCompressionMethod` (see `fsaccess.mdproto.md`). The selected method is stable for the lifetime of the mount session and applies uniformly to every byte payload carried on the corresponding `fsaccess_mount` channel itself. Transfer channels spawned for Stream IO inherit the proposal but follow their own negotiation; see Stream IO below.
+
+When `selectedCompressionMethod = none` (or empty, treated as equivalent), the data plane MUST behave exactly as it did before this revision: no compression is applied, and every `bytes` field carries raw payload as-is.
+
+## Inline Read / Write
+
+When `selectedCompressionMethod` is non-`none`, the following fields carry compressed bytes:
+
+- `FileSystemReadResponse.data` (0x8022)
+- `FileSystemWriteRequest.data` (0x8023)
+
+Each such message MUST carry exactly one self-contained, independently decodable compressed frame in the negotiated format (a Zstandard frame for `zstd`, a raw DEFLATE block sequence for `deflate`, a Brotli stream for `brotli`). Cross-message shared dictionaries or split frames are NOT permitted; receivers MUST be able to decompress each message in isolation.
+
+The 1 MiB spec limit and 16 MiB hard cap on the size of `data` (see `SPEC VIOLATION HANDLING`) apply to the **wire bytes** of the field — that is, the compressed bytes when compression is in effect. The uncompressed length is unbounded by the protocol but is in practice bounded by the read or write request's `length` parameter.
+
+The `length` parameter of `FileSystemReadRequest` (0x8021) and the size of `FileSystemWriteRequest.data` are interpreted in **uncompressed** terms, mirroring POSIX `read(2)` / `write(2)` semantics. Receivers MUST decompress before measuring the produced bytes against the requested length. Senders SHOULD aim to keep the uncompressed payload within the request's `length` bound; the protocol does not require an exact match because some compression formats can produce frames whose decoded size differs from the requested size by a small framing margin.
+
+## Stream IO
+
+Stream IO (`FileSystemRequestStreamReadRequest` / `FileSystemRequestStreamWriteRequest`) hands off the bulk byte transfer to a freshly opened Transfer channel. The mount session's compression method is propagated as the Transfer channel's **proposal**, but the Transfer channel runs its own per-channel negotiation:
+
+- The peer that opens the Transfer channel (the exposing peer for stream reads, the consuming peer for stream writes) MUST set the Transfer channel's `transferArgs` slot to `compress=<selectedCompressionMethod>` — that is, a single-candidate proposal carrying exactly the mount session's negotiated method. When `selectedCompressionMethod = none`, the opener MAY omit the `compress=` token entirely (equivalent to proposing `none` only).
+- The receiver on the Transfer channel acknowledges with `TransferReady` per the Transfer channel's own rules: it MAY pick the proposed candidate, or it MAY pick `none` (for example, when local policy disables compression for this Transfer channel). The receiver MUST NOT pick any method that was not in the proposal and is not `none`.
+
+When the receiver picks a method that differs from the mount session's `selectedCompressionMethod`, only the Transfer channel itself is affected: subsequent inline IO on the parent `fsaccess_mount` channel continues to use the mount session's method. This avoids escalating a per-Transfer-channel policy decision into a mount-wide renegotiation while still letting an individual stream opt out of compression when required.
+
+## Failure Handling
+
+A decompression failure on either side (malformed frame, unknown identifier, truncated payload) is treated as a corrupted operation:
+
+- For inline read / write, the affected operation MUST fail with `ioError`, and subsequent operations on the same handle remain valid.
+- For stream IO, the affected Transfer channel MUST be aborted as defined by the Transfer channel's own abort mechanism; partial bytes already written to disk are NOT rolled back, mirroring inline write semantics for partial writes.
+
+In both cases the underlying mount channel and parent control channel remain open: the protocol does not escalate a single corrupted payload to a session-level fault.
+
+---
+
 # SPEC VIOLATION HANDLING
 
 This appendix collects the per-channel size and count limits referenced from individual messages above, and maps each potential violation onto the project-wide **Spec Violation Handling Policy** (see the project's `CLAUDE.md`). Limits that apply to the discovery / consent surface of fsaccess are defined in the control channel's own `SPEC VIOLATION HANDLING` section.
