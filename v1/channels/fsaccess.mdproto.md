@@ -246,6 +246,15 @@ message FileSystemMountRequest {
   /// The exposing peer SHOULD treat the value as untrusted display text and MUST NOT use it for any access decision.
   optional string reason = 4;
 
+  /// Compression methods proposed by the consuming peer for the data plane
+  /// of this mount session, ordered by preference (the first entry is the
+  /// most-preferred). The exposing peer picks one of these in
+  /// `FileSystemMountResponse.selectedCompressionMethod`, or picks `none`
+  /// when no candidate is supported. An empty list is equivalent to a
+  /// list containing only `none`.
+  // @constset: CompressionMethod
+  repeated string proposedCompressionMethods = 5;
+
   /// Reserved for future flag bits. MUST be zero in the current revision.
   uint32 flags = 15;
 }
@@ -258,11 +267,15 @@ The exposing peer is expected to display a consent UI to the local user before r
 
 A successful mount results in two follow-up actions by the exposing peer: (1) the `FileSystemMountResponse` carrying the granted `sessionId`, and (2) a `ChannelStartRequest` opening a new `fsaccess_mount` channel whose argument list addresses the same `sessionId`. The data-plane operations for the mount are then conducted on the `fsaccess_mount` channel; this control channel sees no further per-mount messages aside from `FileSystemUnmountRequest`.
 
+The `proposedCompressionMethods` field advertises which compression methods the consuming peer is willing to decompress on the data plane of this mount session. The exposing peer's choice from this list is reported in `FileSystemMountResponse.selectedCompressionMethod` and applies uniformly to every byte payload carried on the corresponding `fsaccess_mount` channel itself; Transfer channels spawned for Stream IO inherit the proposal but follow their own per-channel negotiation. See the `COMPRESSION` appendix of `fsaccess_mount.mdproto.md` for the full data-plane contract.
+
 ### IMPLEMENTATION NOTES
 
 The length of `reason` MUST NOT exceed 512 bytes (Pattern A spec limit). Receivers MUST close the channel with `ServerNotice(quotaExceeded)` when more than 8 KiB is received (hard limit).
 
 The exposing peer MAY enforce a per-channel limit on the number of concurrently active mount sessions: spec limit 16, soft limit 24 (warn), hard limit 512 (channel close with `quotaExceeded`).
+
+The exposing peer MUST treat `proposedCompressionMethods` as advisory: it MAY pick any candidate from the list (including `none` if listed), and it MAY pick `none` even when concrete candidates are offered (for example, when local policy disables compression for this mount). The exposing peer MUST NOT pick a method that was not in the list, except for `none`, which is always implicitly available regardless of whether the consuming peer included it. Unknown identifiers in the list MUST be ignored as if absent rather than rejected, so that newer consumers can interoperate with older exposing peers.
 
 ## FileSystemMountResponse
 
@@ -286,6 +299,15 @@ message FileSystemMountResponse {
 
   /// Whether the exposing peer supports byte-range locking on this mount session. When false, all three lock operations on the corresponding `fsaccess_mount` channel (`FileSystemLockRequest`, `FileSystemUnlockRequest`, `FileSystemTestLockRequest`) MUST fail with `notSupported`, and the consuming peer SHOULD avoid sending them. See the `LOCK SEMANTICS` appendix of `fsaccess_mount.mdproto.md` for the full capability-negotiation contract.
   bool supportsLocks = 6;
+
+  /// Compression method picked from `FileSystemMountRequest.proposedCompressionMethods`,
+  /// or `none` when the exposing peer opts out (e.g., no candidate supported,
+  /// or local policy disables compression for this mount). Stable for the
+  /// lifetime of the mount session and applies to every byte payload
+  /// exchanged on the corresponding `fsaccess_mount` channel. An empty
+  /// string is equivalent to `none`.
+  // @constset: CompressionMethod
+  string selectedCompressionMethod = 7;
 }
 ```
 
@@ -296,6 +318,8 @@ A successful response is paired with a follow-up `ChannelStartRequest` opening a
 
 The `supportsLocks` flag advertises whether byte-range advisory locking is available on the granted mount session. The flag reflects the exposing peer's host-platform capability rather than a per-request policy decision; consuming peers SHOULD treat it as stable for the lifetime of the mount session.
 
+The `selectedCompressionMethod` field reports the compression method that will apply to every byte payload exchanged on the corresponding `fsaccess_mount` channel for the lifetime of the mount session. The full data-plane contract (which payloads are subject to compression, where the boundary lies for inline vs. stream IO, etc.) is defined in the `COMPRESSION` appendix of `fsaccess_mount.mdproto.md`.
+
 ### IMPLEMENTATION NOTES
 
 When the user explicitly rejects the consent dialog, the response MUST set `code = consentDenied`. Requesters SHOULD NOT automatically retry on `consentDenied`; instead, the retry decision SHOULD be surfaced to the requester's user.
@@ -303,6 +327,8 @@ When the user explicitly rejects the consent dialog, the response MUST set `code
 The exposing peer SHOULD send `FileSystemMountResponse` before issuing the corresponding `ChannelStartRequest` for the `fsaccess_mount` channel, so that the requester has the `sessionId` in hand when validating the incoming channel arguments. If the order is reversed on the wire (e.g., due to channel-management ordering), the requester MAY buffer the unfamiliar `ChannelStartRequest` for a brief window and resolve it once the matching `FileSystemMountResponse` arrives.
 
 The exposing peer SHOULD set `supportsLocks = true` only when the host platform provides handle-bound byte-range locks with the semantics expected by the protocol (POSIX `fcntl(F_SETLK)` / OFD locks, Windows `LockFileEx`). Sandboxed or proxied filesystems whose lock tables are unreliable (for example, certain mobile sandboxes) MUST set the flag to false rather than silently substituting a weaker semantics. The consuming peer MAY simulate locks locally if its application semantics require it; such simulation provides no cross-peer guarantee and is entirely out of scope for this protocol.
+
+`selectedCompressionMethod` MUST be one of the values listed in `FileSystemMountRequest.proposedCompressionMethods`, or `none` (which is always implicitly available regardless of whether it appeared in the proposal). An empty string is treated as equivalent to `none` so that older exposing peers that do not populate this field interoperate with newer consumers as if compression had been disabled. Once advertised, the value MUST NOT change for the lifetime of the mount session. If the consuming peer does not recognize the identifier, it follows the `CompressionMethod` constset's single-value fallback rule and treats the mount session as if `none` had been selected.
 
 ## FileSystemUnmountRequest
 
