@@ -74,8 +74,7 @@ message ClipboardItem {
 
 ### IMPLEMENTATION NOTES
 
-- The length of `representations` MUST NOT exceed 32.
-- The receiver MAY reject any message that violates this limit.
+- Senders SHOULD include only the format representations natively registered on the host platform; in practice this is a small handful. The full message remains subject to the protocol-wide 16 MiB frame size limit defined in the protocol introduction.
 
 ---
 
@@ -170,8 +169,7 @@ message ClipboardEvent {
 ### IMPLEMENTATION NOTES
 
 - Implementations MAY refuse to send clipboard events for data that is deemed security-sensitive.
-- The length of `items` MUST NOT exceed 1024.
-- The receiver MAY reject any message that violates this limit.
+- Batch operations (e.g., multi-file copies in a file manager) MAY produce events with a large number of items; the message is bounded only by the protocol-wide 16 MiB frame size limit, and large per-item payloads are expected to use the `omitted` flag with on-demand Transfer (see "DEALING WITH LARGE SIZE DATA").
 
 ### DESCRIPTION
 
