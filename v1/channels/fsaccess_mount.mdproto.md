@@ -315,7 +315,7 @@ A `length` of zero is a valid request and MUST be answered with an empty `data` 
 
 ### IMPLEMENTATION NOTES
 
-The `length` field SHOULD NOT exceed 1 MiB in normal operation. Values above the per-frame cap of 16 MiB MUST close the channel with `ServerNotice(payloadTooLarge)`.
+Typical values for `length` fall in the 64 KiB – 1 MiB range, balancing memory pressure against round-trip count. The maximum is bounded by the protocol-wide 16 MiB frame size limit defined in the protocol introduction.
 
 Reads on a handle that currently has an active stream transfer (initiated by `FileSystemRequestStreamRead` / `FileSystemRequestStreamWrite`) are permitted; consistency between the inline read and the stream is the requester's responsibility.
 
@@ -367,7 +367,7 @@ Writes `data` to the file at `offset` (or at the current EOF if the handle is in
 
 ### IMPLEMENTATION NOTES
 
-The size of `data` SHOULD NOT exceed 1 MiB in normal operation. Values above the per-frame cap of 16 MiB MUST close the channel with `ServerNotice(payloadTooLarge)`.
+Typical chunk sizes for `data` fall in the 64 KiB – 1 MiB range, balancing memory pressure against round-trip count. The maximum is bounded by the protocol-wide 16 MiB frame size limit defined in the protocol introduction.
 
 Write durability is not guaranteed by `success = true` alone. Callers requiring durability MUST issue `FileSystemFlushRequest` after the relevant writes (or close the handle, which performs an implicit flush).
 
@@ -567,7 +567,7 @@ A successful response with empty `entries` and `isEnd = true` is the canonical e
 
 ### IMPLEMENTATION NOTES
 
-The number of entries in a single response SHOULD NOT exceed 1024 in normal operation, and the response is additionally bounded by the per-frame cap of 16 MiB.
+For paginated directory listings, exposing peers SHOULD typically respond with batches of a few hundred entries to balance round-trips against memory pressure. The response is bounded by the protocol-wide 16 MiB frame size limit defined in the protocol introduction.
 
 If the directory is modified concurrently with the listing, the exposing peer MAY return inconsistent results (entries duplicated or missed). The protocol does not provide snapshot-isolation semantics; consumers requiring consistency MUST coordinate at the application level.
 
@@ -880,7 +880,7 @@ The requester is the data sender. After this request succeeds, the requester ope
 
 The exposing peer MAY abort the Transfer channel mid-stream when local conditions force it (e.g., `diskFull`, `quotaExceeded`). The abort reason is conveyed through the Transfer channel's abort mechanism; partially written bytes are NOT rolled back, mirroring inline write semantics.
 
-If the requester sends more bytes than `length` (when `length` is not the open-ended sentinel), the exposing peer MUST treat this as a protocol violation, abort the Transfer channel, and SHOULD close the fsaccess_mount channel with `ServerNotice(quotaExceeded)`.
+If the requester sends more bytes than `length` (when `length` is not the open-ended sentinel), the exposing peer MUST treat this as a protocol violation, abort the Transfer channel, and SHOULD close the fsaccess_mount channel with `ServerNotice(protocolViolation)`.
 
 Inline writes on the same handle remain permitted while the stream is in progress; consistency between the two paths is the requester's responsibility.
 
@@ -1094,7 +1094,7 @@ An `fsaccess_mount` channel MUST NOT be opened independently of an active fsacce
 
 ## Authentication Gate
 
-Like the parent fsaccess control channel, fsaccess_mount MUST NOT exchange messages before the Sirius authentication phase has completed. If a fsaccess_mount message somehow reaches the channel before authentication completes, the channel MUST be closed with `ServerNotice(phaseViolation)`.
+Like the parent fsaccess control channel, fsaccess_mount MUST NOT exchange messages before the Sirius authentication phase has completed. If a fsaccess_mount message somehow reaches the channel before authentication completes, the channel MUST be closed with `ServerNotice(protocolViolation)`; the notice's `message` field SHOULD identify the violated phase ordering.
 
 ## Cascade Cleanup
 
@@ -1124,7 +1124,7 @@ The exposing peer MUST apply the following steps in order:
 1. **UTF-8 check.** Reject if the byte sequence is not valid UTF-8.
 2. **NUL check.** Reject if any byte is `0x00`.
 3. **Component split and normalization.** Split on `/`. Drop empty components produced by leading, trailing, or repeated slashes. Drop `.` components. Resolve `..` components by popping the previous component from the in-progress result; if `..` would pop past the start (i.e., escape the mount root), reject the path.
-4. **Length check.** After normalization, fail with `pathTooLong` if the rejoined path exceeds 4096 bytes. Egregiously oversized paths (more than 64 KiB) MUST close the channel with `ServerNotice(payloadTooLarge)`.
+4. **Length check.** After normalization, fail with `pathTooLong` if the rejoined path exceeds 4096 bytes. Path-bearing requests are additionally bounded by the protocol-wide 16 MiB frame size limit, so no separate channel-close threshold is required.
 5. **Host-path resolution.** Join the normalized path with the mount's host root to produce an absolute host path.
 6. **Subtree re-check.** After any symlink resolution that the operation actually performs (e.g., `Stat` with `followSymlinks = true`), the resolved host path MUST still lie within the mount's host root subtree. Otherwise the operation MUST fail with `policyViolation`.
 
@@ -1208,7 +1208,7 @@ When `selectedCompressionMethod` is non-`none`, the following fields carry compr
 
 Each such message MUST carry exactly one self-contained, independently decodable compressed frame in the negotiated format (a Zstandard frame for `zstd`, a raw DEFLATE block sequence for `deflate`, a Brotli stream for `brotli`). Cross-message shared dictionaries or split frames are NOT permitted; receivers MUST be able to decompress each message in isolation.
 
-The 1 MiB normal-operation guideline and 16 MiB per-frame cap on the size of `data` apply to the **wire bytes** of the field — that is, the compressed bytes when compression is in effect. The uncompressed length is unbounded by the protocol but is in practice bounded by the read or write request's `length` parameter.
+The protocol-wide 16 MiB frame size limit on the size of `data` applies to the **wire bytes** of the field — that is, the compressed bytes when compression is in effect. The uncompressed length is unbounded by the protocol but is in practice bounded by the read or write request's `length` parameter.
 
 The `length` parameter of `FileSystemReadRequest` (0x8021) and the size of `FileSystemWriteRequest.data` are interpreted in **uncompressed** terms, mirroring POSIX `read(2)` / `write(2)` semantics. Receivers MUST decompress before measuring the produced bytes against the requested length. Senders SHOULD aim to keep the uncompressed payload within the request's `length` bound; the protocol does not require an exact match because some compression formats can produce frames whose decoded size differs from the requested size by a small framing margin.
 

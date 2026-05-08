@@ -225,7 +225,7 @@ Sent in response to a `FileSystemListRequest`. An empty `entries` list with `suc
 
 ### IMPLEMENTATION NOTES
 
-The length of `entries` SHOULD NOT exceed 32 in normal operation. Receivers SHOULD truncate to 32 with a warning when more than 32 entries are received, and MUST close the channel with `ServerNotice(quotaExceeded)` when more than 1024 entries are received.
+The exposing peer SHOULD typically advertise no more than 256 entries; this is intended as a UX guideline rather than a hard ceiling. Larger responses remain valid up to the protocol-wide 16 MiB frame size limit, and consumers MAY truncate the displayed list locally as they see fit.
 
 ## FileSystemMountRequest
 
@@ -271,9 +271,9 @@ The `proposedCompressionMethods` field advertises which compression methods the 
 
 ### IMPLEMENTATION NOTES
 
-The length of `reason` SHOULD NOT exceed 512 bytes in normal operation. Receivers MUST close the channel with `ServerNotice(quotaExceeded)` when more than 8 KiB is received.
+`reason` is intended for short human-readable display text. The exposing peer SHOULD reject mount requests where `reason` exceeds 8 KiB with `error.code = invalidArgument`; an oversized free-form text field is a request-level fault, not a session-level invariant violation.
 
-The exposing peer MAY enforce a per-channel limit on the number of concurrently active mount sessions; a typical guideline is 16 sessions, and the receiver MUST close the channel with `ServerNotice(quotaExceeded)` once the count exceeds 512.
+The exposing peer MAY enforce an implementation-defined limit on the number of concurrently active mount sessions per control channel. When a new mount request would exceed the configured limit, the exposing peer SHOULD reject only that request with `error.code = quotaExceeded` and leave existing sessions untouched.
 
 The exposing peer MUST treat `proposedCompressionMethods` as advisory: it MAY pick any candidate from the list (including `none` if listed), and it MAY pick `none` even when concrete candidates are offered (for example, when local policy disables compression for this mount). The exposing peer MUST NOT pick a method that was not in the list, except for `none`, which is always implicitly available regardless of whether the consuming peer included it. Unknown identifiers in the list MUST be ignored as if absent rather than rejected, so that newer consumers can interoperate with older exposing peers.
 
@@ -391,11 +391,11 @@ The fsaccess channel layers on top of the standard Sirius channel lifecycle (des
 
 ## Authentication Gate
 
-The fsaccess channel MUST NOT be opened before the Sirius authentication phase has completed (i.e., before `AuthResponse` has been received on the main channel). A `ChannelStartRequest` for fsaccess sent earlier in the session MUST be rejected at the channel-management level. If a fsaccess message somehow reaches the channel before authentication completes, the channel MUST be closed with `ServerNotice(phaseViolation)`.
+The fsaccess channel MUST NOT be opened before the Sirius authentication phase has completed (i.e., before `AuthResponse` has been received on the main channel). A `ChannelStartRequest` for fsaccess sent earlier in the session MUST be rejected at the channel-management level. If a fsaccess message somehow reaches the channel before authentication completes, the channel MUST be closed with `ServerNotice(protocolViolation)`; the notice's `message` field SHOULD identify the violated phase ordering.
 
 ## Single-Instance Constraint
 
-Each Sirius connection MAY have at most one active fsaccess control channel. Opening a second fsaccess channel while another is active MUST fail at the channel-management level. If for any reason a duplicate channel reaches the message phase, it MUST be closed with `ServerNotice(policyViolation)`.
+Each Sirius connection MAY have at most one active fsaccess control channel. Opening a second fsaccess channel while another is active MUST fail at the channel-management level. If for any reason a duplicate channel reaches the message phase, it MUST be closed with `ServerNotice(protocolViolation)`; the notice's `message` field SHOULD identify the single-instance constraint as the violated invariant.
 
 The single-channel constraint simplifies sessionId allocation and ensures predictable cleanup semantics on connection teardown. There is no equivalent constraint on `fsaccess_mount`: any number of mount channels MAY coexist subject to the per-channel mount-session quota described above.
 
