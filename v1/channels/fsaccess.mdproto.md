@@ -93,7 +93,7 @@ constset FileSystemErrorCode: uint32 {
   const diskFull = 60;
   /// File would exceed the maximum allowed size. (POSIX: EFBIG)
   const fileTooLarge = 61;
-  /// Quota exceeded (POSIX: EDQUOT, or Pattern A hard threshold violation).
+  /// Quota exceeded (POSIX: EDQUOT).
   const quotaExceeded = 62;
   /// Too many open handles for this mount channel. (POSIX: EMFILE)
   const tooManyHandles = 63;
@@ -225,7 +225,7 @@ Sent in response to a `FileSystemListRequest`. An empty `entries` list with `suc
 
 ### IMPLEMENTATION NOTES
 
-The length of `entries` MUST NOT exceed 32 in normal operation (Pattern A spec limit). Receivers SHOULD truncate to 32 with a warning when up to 48 entries are received (soft limit, 1.5x), and MUST close the channel with `ServerNotice(quotaExceeded)` when more than 1024 entries are received (hard limit, 32x).
+The length of `entries` SHOULD NOT exceed 32 in normal operation. Receivers SHOULD truncate to 32 with a warning when more than 32 entries are received, and MUST close the channel with `ServerNotice(quotaExceeded)` when more than 1024 entries are received.
 
 ## FileSystemMountRequest
 
@@ -271,9 +271,9 @@ The `proposedCompressionMethods` field advertises which compression methods the 
 
 ### IMPLEMENTATION NOTES
 
-The length of `reason` MUST NOT exceed 512 bytes (Pattern A spec limit). Receivers MUST close the channel with `ServerNotice(quotaExceeded)` when more than 8 KiB is received (hard limit).
+The length of `reason` SHOULD NOT exceed 512 bytes in normal operation. Receivers MUST close the channel with `ServerNotice(quotaExceeded)` when more than 8 KiB is received.
 
-The exposing peer MAY enforce a per-channel limit on the number of concurrently active mount sessions: spec limit 16, soft limit 24 (warn), hard limit 512 (channel close with `quotaExceeded`).
+The exposing peer MAY enforce a per-channel limit on the number of concurrently active mount sessions; a typical guideline is 16 sessions, and the receiver MUST close the channel with `ServerNotice(quotaExceeded)` once the count exceeds 512.
 
 The exposing peer MUST treat `proposedCompressionMethods` as advisory: it MAY pick any candidate from the list (including `none` if listed), and it MAY pick `none` even when concrete candidates are offered (for example, when local policy disables compression for this mount). The exposing peer MUST NOT pick a method that was not in the list, except for `none`, which is always implicitly available regardless of whether the consuming peer included it. Unknown identifiers in the list MUST be ignored as if absent rather than rejected, so that newer consumers can interoperate with older exposing peers.
 
@@ -416,45 +416,3 @@ The control channel and its mount channels are bound by a strict parent / child 
 - When an `fsaccess_mount` channel closes — by graceful close, the requester closing it as an implicit unmount, or transport failure — both peers MUST treat the corresponding mount session as released. No further `FileSystemUnmountRequest` exchange is needed; if the requester nonetheless sends one, the exposing peer responds with `success = false` and `code = invalidSession`.
 
 The requester SHOULD treat any locally cached `sessionId` value as invalid after the corresponding `fsaccess_mount` channel has closed, and MUST NOT attempt to reuse it on a freshly opened channel.
-
----
-
-# SPEC VIOLATION HANDLING
-
-This appendix collects the per-channel size and count limits that apply specifically to the fsaccess control channel. Limits that apply to the per-mount data plane are defined in the `fsaccess_mount` channel's own `SPEC VIOLATION HANDLING` section.
-
-## Pattern A Thresholds
-
-| Subject | spec limit | warn (≈1.5×) | hard (≈32×) |
-|---|---|---|---|
-| `FileSystemListResponse.entries` count | **32** | 48 | **1024** |
-| Concurrently active mount sessions per connection | **16** | 24 | **512** |
-| `FileSystemMountRequest.reason` byte length | **512** | — | **8 KiB** |
-
-Interpretation:
-
-- `value ≤ spec limit` — normal operation, no log entry.
-- `spec limit < value ≤ warn limit` — likely a sender-side bug. The receiver SHOULD log a warning and either truncate to the spec limit (for `repeated` fields and byte buffers) or return the appropriate response-level error such as `tooManyHandles`. The channel remains open.
-- `warn limit < value ≤ hard limit` — gray zone. The receiver SHOULD log an elevated warning and continue with truncate or response-error semantics. The channel remains open unless the implementation explicitly escalates.
-- `value > hard limit` — treated as deliberate abuse. The receiver MUST close the channel and emit a `ServerNotice` carrying the specific code (`quotaExceeded` or `payloadTooLarge`) along with a detailed reason message that names the violated subject, the observed value, and the limit.
-
-## Severity Classification
-
-The categorization below distinguishes violations that result in a per-operation error response from violations that close the entire channel.
-
-### Response-level errors (channel remains open)
-
-These are normal operational failures that map to the `ErrorInfo` in the relevant response: `notFound`, `accessDenied`, `permissionDenied`, `policyViolation`, `consentDenied`, `invalidSession`, `notMounted`, `invalidArgument`, `notSupported`.
-
-### Channel-fatal violations (channel closes with `ServerNotice`)
-
-These are protocol-level violations that cannot be safely recovered from on the same channel:
-
-| Trigger | `ServerNotice` code |
-|---|---|
-| Unknown opcode received on the channel | `unsupportedOpcode` |
-| Any Pattern A subject exceeds its hard limit | `quotaExceeded` |
-| fsaccess message received before the Sirius authentication phase has completed | `phaseViolation` |
-| A second fsaccess control channel is opened while another is already active on the same connection | `policyViolation` |
-
-The `message` field on `ServerNotice` SHOULD be detailed enough to identify the violation from logs alone, naming the offending subject, the observed value, and the relevant limit.

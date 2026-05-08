@@ -207,7 +207,7 @@ To obtain a directory handle for use with `FileSystemReadDirRequest`, the `direc
 
 When `flags & append` is set, the resulting handle ignores the `offset` field of any `FileSystemWriteRequest` and always writes at the current end of file. This mirrors POSIX `O_APPEND` semantics.
 
-Path validation, path-length limits, and per-channel handle limits are described in the `PATH HANDLING` and `SPEC VIOLATION HANDLING` appendix sections.
+Path validation and path-length limits are described in the `PATH HANDLING` appendix section.
 
 ## FileSystemOpenResponse
 
@@ -315,7 +315,7 @@ A `length` of zero is a valid request and MUST be answered with an empty `data` 
 
 ### IMPLEMENTATION NOTES
 
-The `length` field MUST NOT exceed 1 MiB (Pattern A spec limit). The hard limit is the per-frame cap of 16 MiB; values above the hard limit MUST close the channel with `ServerNotice(payloadTooLarge)`. See the `SPEC VIOLATION HANDLING` appendix for full thresholds.
+The `length` field SHOULD NOT exceed 1 MiB in normal operation. Values above the per-frame cap of 16 MiB MUST close the channel with `ServerNotice(payloadTooLarge)`.
 
 Reads on a handle that currently has an active stream transfer (initiated by `FileSystemRequestStreamRead` / `FileSystemRequestStreamWrite`) are permitted; consistency between the inline read and the stream is the requester's responsibility.
 
@@ -367,7 +367,7 @@ Writes `data` to the file at `offset` (or at the current EOF if the handle is in
 
 ### IMPLEMENTATION NOTES
 
-The size of `data` MUST NOT exceed 1 MiB (Pattern A spec limit). The hard limit is the per-frame cap of 16 MiB; values above the hard limit MUST close the channel with `ServerNotice(payloadTooLarge)`. See the `SPEC VIOLATION HANDLING` appendix for full thresholds.
+The size of `data` SHOULD NOT exceed 1 MiB in normal operation. Values above the per-frame cap of 16 MiB MUST close the channel with `ServerNotice(payloadTooLarge)`.
 
 Write durability is not guaranteed by `success = true` alone. Callers requiring durability MUST issue `FileSystemFlushRequest` after the relevant writes (or close the handle, which performs an implicit flush).
 
@@ -451,7 +451,7 @@ Returns metadata for the entry at `path`. Used to inspect existence, type, size,
 
 When `followSymlinks` is true and the link resolution lands outside the mount root (or escapes through any subtree boundary), the operation MUST fail with `policyViolation` rather than returning the resolved entry's stat.
 
-Path validation rules and length limits are described in the `PATH HANDLING` and `SPEC VIOLATION HANDLING` appendix sections.
+Path validation rules and length limits are described in the `PATH HANDLING` appendix section.
 
 ## FileSystemStatResponse
 
@@ -567,7 +567,7 @@ A successful response with empty `entries` and `isEnd = true` is the canonical e
 
 ### IMPLEMENTATION NOTES
 
-The number of entries in a single response MUST NOT exceed 1024 (Pattern A spec limit), and the response is additionally bounded by the per-frame cap of 16 MiB. See the `SPEC VIOLATION HANDLING` appendix for full thresholds.
+The number of entries in a single response SHOULD NOT exceed 1024 in normal operation, and the response is additionally bounded by the per-frame cap of 16 MiB.
 
 If the directory is modified concurrently with the listing, the exposing peer MAY return inconsistent results (entries duplicated or missed). The protocol does not provide snapshot-isolation semantics; consumers requiring consistency MUST coordinate at the application level.
 
@@ -600,7 +600,7 @@ Common failure codes:
 - `notDirectory` — a non-directory parent component was encountered.
 - `readOnlyFilesystem` — the mount or filesystem is read-only.
 
-Path validation rules and length limits are described in the `PATH HANDLING` and `SPEC VIOLATION HANDLING` appendix sections.
+Path validation rules and length limits are described in the `PATH HANDLING` appendix section.
 
 ## FileSystemMkdirResponse
 
@@ -690,7 +690,7 @@ Common failure codes:
 - `readOnlyFilesystem` — the mount or filesystem is read-only.
 - `busy` — the entry is in use and cannot be removed (e.g., Windows lock semantics).
 
-Path validation rules and length limits are described in the `PATH HANDLING` and `SPEC VIOLATION HANDLING` appendix sections.
+Path validation rules and length limits are described in the `PATH HANDLING` appendix section.
 
 ## FileSystemUnlinkResponse
 
@@ -740,7 +740,7 @@ Cross-mount renames are structurally impossible on this channel because each `fs
 
 If `oldPath` and `newPath` resolve to the same entry, the operation MUST succeed as a no-op.
 
-Path validation rules and length limits apply to both `oldPath` and `newPath`; see the `PATH HANDLING` and `SPEC VIOLATION HANDLING` appendix sections.
+Path validation rules and length limits apply to both `oldPath` and `newPath`; see the `PATH HANDLING` appendix section.
 
 ## FileSystemRenameResponse
 
@@ -1124,7 +1124,7 @@ The exposing peer MUST apply the following steps in order:
 1. **UTF-8 check.** Reject if the byte sequence is not valid UTF-8.
 2. **NUL check.** Reject if any byte is `0x00`.
 3. **Component split and normalization.** Split on `/`. Drop empty components produced by leading, trailing, or repeated slashes. Drop `.` components. Resolve `..` components by popping the previous component from the in-progress result; if `..` would pop past the start (i.e., escape the mount root), reject the path.
-4. **Length check.** After normalization, if the rejoined path exceeds the per-channel path-length limits in `SPEC VIOLATION HANDLING`, fail with `pathTooLong` (or close the channel for hard-threshold violations).
+4. **Length check.** After normalization, fail with `pathTooLong` if the rejoined path exceeds 4096 bytes. Egregiously oversized paths (more than 64 KiB) MUST close the channel with `ServerNotice(payloadTooLarge)`.
 5. **Host-path resolution.** Join the normalized path with the mount's host root to produce an absolute host path.
 6. **Subtree re-check.** After any symlink resolution that the operation actually performs (e.g., `Stat` with `followSymlinks = true`), the resolved host path MUST still lie within the mount's host root subtree. Otherwise the operation MUST fail with `policyViolation`.
 
@@ -1208,7 +1208,7 @@ When `selectedCompressionMethod` is non-`none`, the following fields carry compr
 
 Each such message MUST carry exactly one self-contained, independently decodable compressed frame in the negotiated format (a Zstandard frame for `zstd`, a raw DEFLATE block sequence for `deflate`, a Brotli stream for `brotli`). Cross-message shared dictionaries or split frames are NOT permitted; receivers MUST be able to decompress each message in isolation.
 
-The 1 MiB spec limit and 16 MiB hard cap on the size of `data` (see `SPEC VIOLATION HANDLING`) apply to the **wire bytes** of the field — that is, the compressed bytes when compression is in effect. The uncompressed length is unbounded by the protocol but is in practice bounded by the read or write request's `length` parameter.
+The 1 MiB normal-operation guideline and 16 MiB per-frame cap on the size of `data` apply to the **wire bytes** of the field — that is, the compressed bytes when compression is in effect. The uncompressed length is unbounded by the protocol but is in practice bounded by the read or write request's `length` parameter.
 
 The `length` parameter of `FileSystemReadRequest` (0x8021) and the size of `FileSystemWriteRequest.data` are interpreted in **uncompressed** terms, mirroring POSIX `read(2)` / `write(2)` semantics. Receivers MUST decompress before measuring the produced bytes against the requested length. Senders SHOULD aim to keep the uncompressed payload within the request's `length` bound; the protocol does not require an exact match because some compression formats can produce frames whose decoded size differs from the requested size by a small framing margin.
 
@@ -1229,49 +1229,3 @@ A decompression failure on either side (malformed frame, unknown identifier, tru
 - For stream IO, the affected Transfer channel MUST be aborted as defined by the Transfer channel's own abort mechanism; partial bytes already written to disk are NOT rolled back, mirroring inline write semantics for partial writes.
 
 In both cases the underlying mount channel and parent control channel remain open: the protocol does not escalate a single corrupted payload to a session-level fault.
-
----
-
-# SPEC VIOLATION HANDLING
-
-This appendix collects the per-channel size and count limits referenced from individual messages above, and maps each potential violation onto the project-wide **Spec Violation Handling Policy** (see the project's `CLAUDE.md`). Limits that apply to the discovery / consent surface of fsaccess are defined in the control channel's own `SPEC VIOLATION HANDLING` section.
-
-## Pattern A Thresholds
-
-| Subject | spec limit | warn (≈1.5×) | hard (≈32×) |
-|---|---|---|---|
-| `FileSystemReadRequest.length` / `FileSystemWriteRequest.data` size | **1 MiB** | — | **16 MiB** (per-frame cap) |
-| `FileSystemOpenRequest.path` byte length (and any other path field) | **4096** | 6 KiB | **64 KiB** |
-| `DirEntry.name` byte length | **255** | 384 | **8 KiB** |
-| `FileSystemReadDirResponse.entries` count | **1024** | 1536 | **32768** |
-| Concurrently open handles per channel | **256** | 384 | **8192** |
-
-Interpretation:
-
-- `value ≤ spec limit` — normal operation, no log entry.
-- `spec limit < value ≤ warn limit` — likely a sender-side bug. The receiver SHOULD log a warning and either truncate to the spec limit (for `repeated` fields and byte buffers) or return the appropriate response-level error such as `tooManyHandles` or `pathTooLong`. The channel remains open.
-- `warn limit < value ≤ hard limit` — gray zone. The receiver SHOULD log an elevated warning and continue with truncate or response-error semantics. The channel remains open unless the implementation explicitly escalates.
-- `value > hard limit` — treated as deliberate abuse. The receiver MUST close the channel and emit a `ServerNotice` carrying the specific code (`quotaExceeded` or `payloadTooLarge`) along with a detailed reason message that names the violated subject, the observed value, and the limit.
-
-## Severity Classification
-
-The categorization below distinguishes violations that result in a per-operation error response from violations that close the entire channel.
-
-### Response-level errors (channel remains open)
-
-These are normal operational failures that map to the `ErrorInfo` in the relevant response: `notFound`, `accessDenied`, `permissionDenied`, `readOnlyFilesystem`, `policyViolation`, `notEmpty`, `isDirectory`, `notDirectory`, `loop`, `crossDevice`, `alreadyExists`, `pathTooLong`, `diskFull`, `fileTooLarge`, `quotaExceeded` (when arising from per-operation quota rather than a Pattern A hard violation), `tooManyHandles`, `busy`, `staleHandle`, `wouldBlock`, `ioError`, `invalidHandle`, `invalidArgument`, `invalidPath`, `notSupported`.
-
-### Channel-fatal violations (channel closes with `ServerNotice`)
-
-These are protocol-level violations that cannot be safely recovered from on the same channel:
-
-| Trigger | `ServerNotice` code |
-|---|---|
-| Unknown opcode received on the channel | `unsupportedOpcode` |
-| `FileSystemReadRequest.length` or `FileSystemWriteRequest.data` exceeds the 16 MiB per-frame cap | `payloadTooLarge` |
-| Any Pattern A subject exceeds its hard limit | `quotaExceeded` |
-| `FileSystemRequestStreamWriteRequest.length` was a finite value but the requester sent more bytes than declared | `quotaExceeded` |
-| fsaccess_mount message received before the Sirius authentication phase has completed | `phaseViolation` |
-| `ChannelStartRequest.args[0]` does not match a `sessionId` granted by the parent fsaccess control channel | `policyViolation` |
-
-The `message` field on `ServerNotice` SHOULD be detailed enough to identify the violation from logs alone, naming the offending subject, the observed value, and the relevant limit. Example: `"FileSystemReadRequest.length=33554432 exceeds the 16 MiB per-frame cap"`.
