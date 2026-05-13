@@ -41,6 +41,9 @@ constset SiriusFeatureID: UUID {
 
   /// FileSystemAccessMount: Per-mount data plane for the file-system access channel (handle, I/O, directory and file operations).
   const fileSystemAccessMount = uuid"31035A4B-AB82-4F7D-A165-F763C382C1B9";
+
+  /// SimpleRPC: Generic request/response RPC bus for lightweight operations that do not warrant a dedicated channel.
+  const simpleRPC = uuid"360DF067-39B4-423D-8048-BE5FC36A4FEA";
 }
 ```
 
