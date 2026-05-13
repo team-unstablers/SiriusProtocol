@@ -204,6 +204,11 @@ constset AccessibilityActionType: string {
   /// Sets the value of the node.
   /// For example, this could be entering text in a text field or changing the value of a slider.
   const setValue = "setValue";
+
+  /// Cancels or dismisses a transient UI element associated with the node.
+  /// For example, this could close a popup/context menu, dismiss a modal dialog, or abort an in-progress gesture.
+  /// On macOS hosts, this typically maps to the AX `kAXCancelAction`.
+  const cancel = "cancel";
 }
 ```
 
